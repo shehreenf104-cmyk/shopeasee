@@ -28,9 +28,10 @@ The project also addresses digital transformation objectives: enabling a traditi
 The system design is justified through established design and software engineering theories. The key decisions include:
 
 - **API-driven architecture**: using the Fake Store API as the product data source fits the principle of loose coupling and service reuse (Fielding, 2000). This allows the frontend to remain independent of backend implementation.
-- **Responsive UI using Material Design**: adopting Material UI follows guidelines for consistency, accessibility, and responsive design (Google, 2018). It supports usability and reduces design overhead.
+- **Responsive UI using Material Design**: adopting Material UI follows guidelines for consistency, accessibility, and responsive design (Google, 2018). It supports usability and reduces design overhead. The theme has been extended with a custom design token system — a unified colour palette (`#2563EB` primary, `#FF6B35` secondary, `#F1F5F9` background), a full 24-level shadow scale, and per-component style overrides — ensuring visual consistency at scale.
 - **Context API for state management**: using React Context for cart management aligns with the idea of local state propagation without introducing unnecessary complexity from heavier frameworks such as Redux (Abramov, 2018).
 - **Authentication fallback**: implementing local account persistence for signup-login matches the business need for a reliable user system without extensive backend infrastructure.
+- **Context-aware home page**: the home page renders a distinct view depending on authentication state. Unauthenticated visitors see a full marketing landing page with a hero, stats strip, and category showcase; authenticated users see a streamlined welcome-back view with a direct call-to-action. This separates marketing intent from application intent, following established conversion funnel design principles.
 
 The design decisions are supported by principles from user-centred design and business informatics: the system prioritizes user journeys that reflect common customer behaviour, and it connects digital data flows with business objectives.
 
@@ -105,11 +106,24 @@ The prototype uses a modern front-end stack based on React and Material UI. The 
 - turning user stories into route-driven workflows,
 - constructing reusable components for cards, filters, and forms.
 
+Additional reusable components introduced during implementation include:
+
+- **`Footer`**: a persistent site footer rendered on every page via the root layout, providing brand identity and copyright information.
+- **`ProductSkeleton` / `ProductDetailsSkeleton` / `UserCardSkeleton`**: skeleton-loading components that replace spinner indicators, giving users structured placeholder content while data loads — improving perceived performance.
+- **`InfoRow`** (Users page): a small presentational component that pairs an icon with a text label, used consistently across user profile cards.
+
 This integration demonstrates an applied approach to translating design documentation into code.
 
 ### 2.7 Innovation and originality
 
 Innovation in the project is demonstrated by using a hybrid authentication strategy. The prototype supports both the Fake Store API login and locally persisted signup accounts. This overcomes the limitation of a remote API that does not persist newly created users for repeated login, while still using realistic API calls. The design also uses context-based cart management and a responsive Material UI theme to create a polished prototype with minimal dependencies.
+
+Further innovative features include:
+
+- **Scroll-aware navigation**: the `TopBar` uses Material UI's `useScrollTrigger` hook to elevate the app bar with a shadow once the user scrolls past 10 pixels, providing a subtle depth signal without layout shift.
+- **Add-to-cart feedback state**: the `ProductDetails` page maintains a local `added` state that switches the button label to "✓ Added to cart!" and changes its colour to green for two seconds after an item is added, giving users clear, immediate confirmation without a modal or toast.
+- **Contextual landing page**: the home page serves a full marketing experience — hero, statistics strip (200+ products, 4 categories, free shipping, secure checkout), and a category showcase with icons — to unauthenticated users, switching to a focused welcome view for returning shoppers. This dual-mode design reflects real-world conversion optimisation practices.
+- **Cart item count badge**: the `TopBar` cart icon displays a live item count badge with custom sizing, giving users an always-visible cart status without opening the drawer.
 
 ## 3. Evaluation and Communication of Technical Decisions (LO2)
 
@@ -117,9 +131,14 @@ Innovation in the project is demonstrated by using a hybrid authentication strat
 
 The system emphasises usability through responsive layout, clear navigation, and familiar controls. The top bar provides simple access to the home page, product catalogue, and login/signup actions. Buttons and form fields are labelled clearly, and feedback is provided during login/signup attempts.
 
-The search and category filters enable users to narrow product choices quickly. The checkout page presents order summary details in a structured format, improving clarity and reducing cognitive load during purchase.
+The search and category filters enable users to narrow product choices quickly. A live results count ("Showing 8 products in electronics") is displayed below the filter panel, giving users immediate confirmation that their filter was applied. The checkout page presents an order summary with product images, a free shipping indicator, and an order total panel — reducing cognitive load during purchase.
 
-Heuristic principles such as Nielsen’s Usability Heuristics were applied: visibility of system status, match between system and real world, user control, consistency, and error prevention (Nielsen & Molich, 1990). For example, error messages surface when required fields are missing, and the cart drawer shows a real-time subtotal.
+Heuristic principles such as Nielsen’s Usability Heuristics were applied: visibility of system status, match between system and real world, user control, consistency, and error prevention (Nielsen & Molich, 1990). Applied examples include:
+
+- **Visibility of system status**: skeleton loaders on the Products, ProductDetails, and Users pages replace generic spinners with structured placeholder layouts, keeping users oriented during API requests.
+- **User control**: the cart drawer provides both a "Proceed to Checkout" button and a "Continue Shopping" button, allowing users to return to browsing without commitment.
+- **Feedback on action**: the "Add to Cart" button on the ProductDetails page temporarily changes label and colour to confirm the action, satisfying the heuristic of system response to user actions.
+- **Error prevention**: required form fields and inline error alerts on login and signup guide users before submission fails.
 
 ### 3.2 Scalability evaluation
 
@@ -139,6 +158,8 @@ Maintainability is supported by using standard development practices:
 - centralised state management for authentication and cart data.
 
 The `CartContext` and `AuthContext` encapsulate state and behaviour, which reduces duplication and makes the application easier to update. The service layer in `api.js` provides a single location for all HTTP calls. If API endpoints change, only the service definitions need updating.
+
+The Material UI theme in `App.jsx` now acts as a centralised design token system: colours, typography scales, shadow levels, border radii, and per-component style overrides are all defined in one place. This means visual changes — such as updating the brand colour — require a single edit rather than changes scattered across components.
 
 Material UI and React are widely adopted frameworks with strong documentation and community support. This reduces maintenance risk and improves the likelihood that future developers can understand and extend the system.
 
@@ -179,15 +200,21 @@ The application is built using React with React Router for navigation and Materi
 
 Key technical components include:
 
-- `App.jsx`: defines routes and global providers,
+- `App.jsx`: defines routes, global providers, the Material UI theme, and the persistent `Footer` component,
 - `AuthContext.jsx`: manages login, signup, and authentication state,
 - `CartContext.jsx`: handles cart state and persistence,
 - `api.js`: centralises API access,
-- pages and components that implement the user interface and workflows.
+- `TopBar.jsx`: responsive navigation bar with scroll-aware elevation, branded logo, and a cart badge,
+- `CartDrawer.jsx`: slide-in cart panel with inline quantity controls, gradient pricing, and checkout/continue-shopping actions,
+- `ProductCard.jsx`: product tile with category badge, image hover zoom, rating count, and gradient price,
+- skeleton loader components (`ProductSkeleton`, `ProductDetailsSkeleton`, `UserCardSkeleton`) for improved perceived loading performance,
+- pages that implement the user interface and workflows, each with a dark gradient page header and consistent layout structure.
 
 ### 4.3 Workflow and user journey
 
-The main workflow begins on the home page, where unauthenticated users are prompted to log in or sign up. After authentication, users can access the products page, search and filter the catalog, view details, add items to the cart, and proceed to checkout.
+The main workflow begins on the home page. Unauthenticated users see a full marketing landing page with a hero section, a statistics strip (200+ products, 4 categories, free shipping, 100% secure checkout), and a category showcase, guiding them towards signing up or logging in. After authentication, users are shown a streamlined welcome-back view with a direct "Browse Products" call-to-action.
+
+Once authenticated, users can access the products page, search and filter the catalog with live result counts, view detailed product pages, add items to the cart with immediate button feedback, and proceed to checkout. The checkout page presents a sticky order summary sidebar alongside the shipping form, and confirms the completed order with a success screen showing the total.
 
 This journey reflects a typical business conversion funnel, where the goal is to move users from awareness to purchase through clear navigation and minimal friction.
 

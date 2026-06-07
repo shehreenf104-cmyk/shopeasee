@@ -7,14 +7,22 @@ function SearchBar({ value, onChange }) {
       fullWidth
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      placeholder="Search products by name..."
+      placeholder="Search products by name…"
       aria-label="Search products"
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon />
-          </InputAdornment>
-        ),
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
+            </InputAdornment>
+          ),
+        },
+      }}
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          fontSize: '0.9375rem',
+          '& input::placeholder': { color: '#94A3B8', opacity: 1 },
+        },
       }}
     />
   )

@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, NavLink } from 'react-router-dom'
 import {
   Alert,
   Box,
   Button,
   Card,
-  CardContent,
-  Container,
+  Divider,
+  Grid,
   TextField,
   Typography,
-  Stack,
 } from '@mui/material'
+import StorefrontIcon from '@mui/icons-material/Storefront'
 import { useAuth } from '../context/AuthContext'
 
 function Signup() {
@@ -62,61 +62,143 @@ function Signup() {
   }
 
   return (
-    <Container sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
-      <Card sx={{ width: '100%', maxWidth: 520, p: 2 }}>
-        <CardContent>
-          <Stack spacing={2}>
-            <Typography variant="h4">Create account</Typography>
-            <Typography color="text.secondary">
-              Sign up to access products, users, and checkout pages.
-            </Typography>
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
+    <Box
+      sx={{
+        minHeight: 'calc(100vh - 68px)',
+        background: '#F8FAFC',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 6,
+        px: 2,
+      }}
+    >
+      <Card
+        sx={{
+          width: '100%',
+          maxWidth: 520,
+          p: { xs: 3, sm: 4.5 },
+          boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
+          border: '1px solid rgba(0,0,0,0.05)',
+          borderRadius: 4,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {/* Brand */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box
+            sx={{
+              width: 60,
+              height: 60,
+              borderRadius: 3.5,
+              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2.5,
+              boxShadow: '0 10px 28px rgba(37,99,235,0.4)',
+            }}
+          >
+            <StorefrontIcon sx={{ color: 'white', fontSize: 30 }} />
+          </Box>
+          <Typography variant="h4" fontWeight={800} letterSpacing="-0.02em" gutterBottom>
+            Create your account
+          </Typography>
+          <Typography color="text.secondary" fontSize="0.9375rem">
+            Join{' '}
+            <Box component="span" fontWeight={700} color="primary.main">
+              ShopEase
+            </Box>{' '}
+            and start shopping today
+          </Typography>
+        </Box>
+
+        {/* Form */}
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 label="First name"
                 value={form.firstname}
                 onChange={handleChange('firstname')}
                 fullWidth
               />
+            </Grid>
+            <Grid item xs={12} sm={6}>
               <TextField
                 label="Last name"
                 value={form.lastname}
                 onChange={handleChange('lastname')}
                 fullWidth
               />
-              <TextField
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={handleChange('email')}
-                fullWidth
-                required
-              />
-              <TextField
-                label="Username"
-                value={form.username}
-                onChange={handleChange('username')}
-                fullWidth
-                required
-              />
-              <TextField
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={handleChange('password')}
-                fullWidth
-                required
-              />
-              {(error || success) && (
-                <Alert severity={error ? 'error' : 'success'}>{error || success}</Alert>
-              )}
-              <Button type="submit" variant="contained" size="large" disabled={loading}>
-                {loading ? 'Creating account…' : 'Sign up'}
-              </Button>
-            </Box>
-          </Stack>
-        </CardContent>
+            </Grid>
+          </Grid>
+
+          <TextField
+            label="Email address"
+            type="email"
+            value={form.email}
+            onChange={handleChange('email')}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Username"
+            value={form.username}
+            onChange={handleChange('username')}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Password"
+            type="password"
+            value={form.password}
+            onChange={handleChange('password')}
+            fullWidth
+            required
+          />
+
+          {(error || success) && (
+            <Alert severity={error ? 'error' : 'success'}>{error || success}</Alert>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={loading}
+            fullWidth
+            sx={{ py: 1.6, fontSize: '1rem', fontWeight: 700, borderRadius: 3 }}
+          >
+            {loading ? 'Creating account…' : 'Create account'}
+          </Button>
+        </Box>
+
+        <Divider sx={{ my: 3 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={500}>
+            Already have an account?
+          </Typography>
+        </Divider>
+
+        <Button
+          component={NavLink}
+          to="/login"
+          variant="outlined"
+          size="large"
+          fullWidth
+          sx={{
+            py: 1.5,
+            fontSize: '0.9375rem',
+            borderWidth: '1.5px',
+            '&:hover': { borderWidth: '1.5px' },
+          }}
+        >
+          Sign in instead
+        </Button>
       </Card>
-    </Container>
+    </Box>
   )
 }
 
