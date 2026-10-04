@@ -13,6 +13,7 @@ import Checkout from "./pages/Checkout";
 import Users from "./pages/Users";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import TopBar from "./components/TopBar";
 import CartDrawer from "./components/CartDrawer";
@@ -299,6 +300,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Checkout />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute requireAdmin>
+                        <Admin />
                       </ProtectedRoute>
                     }
                   />

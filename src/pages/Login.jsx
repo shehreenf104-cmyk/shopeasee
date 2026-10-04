@@ -6,89 +6,98 @@ import {
   Button,
   Card,
   Divider,
+  InputAdornment,
   TextField,
   Typography,
-} from '@mui/material'
-import { NavLink } from 'react-router-dom'
-import StorefrontIcon from '@mui/icons-material/Storefront'
-import { useAuth } from '../context/AuthContext'
+} from "@mui/material";
+import { NavLink } from "react-router-dom";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
-  const { signIn, isAuthenticated, error, loading } = useAuth()
-  const [identifier, setIdentifier] = useState('')
-  const [password, setPassword] = useState('')
-  const [formError, setFormError] = useState('')
-  const navigate = useNavigate()
-  const location = useLocation()
-  const from = location.state?.from?.pathname || '/products'
+  const { signIn, isAuthenticated, isAdmin, error, loading } = useAuth();
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/products";
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true })
+      navigate(isAdmin ? "/admin" : from, { replace: true });
     }
-  }, [isAuthenticated, from, navigate])
+  }, [isAuthenticated, isAdmin, from, navigate]);
 
   const handleSubmit = async (event) => {
-    event.preventDefault()
+    event.preventDefault();
     if (!identifier || !password) {
-      setFormError('Username/email and password are required.')
-      return
+      setFormError("Username/email and password are required.");
+      return;
     }
-    setFormError('')
+    setFormError("");
     try {
-      await signIn({ identifier, password })
+      await signIn({ identifier, password });
     } catch {
       // Error is handled by auth context
     }
-  }
+  };
 
   return (
     <Box
       sx={{
-        minHeight: 'calc(100vh - 68px)',
-        background: '#F8FAFC',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        minHeight: "calc(100vh - 68px)",
+        background: "#F8FAFC",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         py: 6,
         px: 2,
       }}
     >
       <Card
         sx={{
-          width: '100%',
+          width: "100%",
           maxWidth: 460,
           p: { xs: 3, sm: 4.5 },
-          boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
-          border: '1px solid rgba(0,0,0,0.05)',
+          boxShadow: "0 24px 64px rgba(0,0,0,0.14)",
+          border: "1px solid rgba(0,0,0,0.05)",
           borderRadius: 4,
-          position: 'relative',
+          position: "relative",
           zIndex: 1,
         }}
       >
         {/* Brand */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ textAlign: "center", mb: 4 }}>
           <Box
             sx={{
               width: 60,
               height: 60,
               borderRadius: 3.5,
-              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
+              background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mx: "auto",
               mb: 2.5,
-              boxShadow: '0 10px 28px rgba(37,99,235,0.4)',
+              boxShadow: "0 10px 28px rgba(37,99,235,0.4)",
             }}
           >
-            <StorefrontIcon sx={{ color: 'white', fontSize: 30 }} />
+            <StorefrontIcon sx={{ color: "white", fontSize: 30 }} />
           </Box>
-          <Typography variant="h4" fontWeight={800} letterSpacing="-0.02em" gutterBottom>
+          <Typography
+            variant="h4"
+            fontWeight={800}
+            letterSpacing="-0.02em"
+            gutterBottom
+          >
             Welcome back
           </Typography>
           <Typography color="text.secondary" fontSize="0.9375rem">
-            Sign in to continue to{' '}
+            Sign in to continue to{" "}
             <Box component="span" fontWeight={700} color="primary.main">
               ShopEase
             </Box>
@@ -96,7 +105,11 @@ function Login() {
         </Box>
 
         {/* Form */}
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "grid", gap: 2.5 }}
+        >
           <TextField
             label="Username or email"
             value={identifier}
@@ -106,10 +119,43 @@ function Login() {
           />
           <TextField
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             fullWidth
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setShowPassword((value) => !value)}
+                      sx={{
+                        minWidth: 72,
+                        borderRadius: 2,
+                        fontWeight: 700,
+                        textTransform: "none",
+                        px: 1.25,
+                        py: 0.6,
+                        borderColor: "rgba(59,130,246,0.5)",
+                        color: "primary.main",
+                        backgroundColor: "rgba(37,99,235,0.04)",
+                        "&:hover": {
+                          backgroundColor: "rgba(37,99,235,0.08)",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      startIcon={
+                        showPassword ? <VisibilityOff /> : <Visibility />
+                      }
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </Button>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
 
           {(formError || error) && (
@@ -122,9 +168,9 @@ function Login() {
             size="large"
             disabled={loading}
             fullWidth
-            sx={{ py: 1.6, fontSize: '1rem', fontWeight: 700, borderRadius: 3 }}
+            sx={{ py: 1.6, fontSize: "1rem", fontWeight: 700, borderRadius: 3 }}
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? "Signing in…" : "Sign in"}
           </Button>
         </Box>
 
@@ -142,16 +188,16 @@ function Login() {
           fullWidth
           sx={{
             py: 1.5,
-            fontSize: '0.9375rem',
-            borderWidth: '1.5px',
-            '&:hover': { borderWidth: '1.5px' },
+            fontSize: "0.9375rem",
+            borderWidth: "1.5px",
+            "&:hover": { borderWidth: "1.5px" },
           }}
         >
           Create a free account
         </Button>
       </Card>
     </Box>
-  )
+  );
 }
 
 export default Login

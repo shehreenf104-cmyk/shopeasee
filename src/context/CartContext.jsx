@@ -1,39 +1,89 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useAuth } from "./AuthContext";
 
-const CartContext = createContext(null)
+const CartContext = createContext(null);
+
+const getAddedProductsLog = () => {
+  try {
+    return JSON.parse(localStorage.getItem("shopEaseAddedProducts") ?? "[]");
+  } catch {
+    return [];
+  }
+};
 
 export function CartProvider({ children }) {
+  const { user } = useAuth();
   const [cart, setCart] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('shopEaseCart') ?? '[]')
+      return JSON.parse(localStorage.getItem("shopEaseCart") ?? "[]");
     } catch {
-      return []
+      return [];
     }
-  })
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('shopEaseCart', JSON.stringify(cart))
-  }, [cart])
+    localStorage.setItem("shopEaseCart", JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (product) => {
     setCart((current) => {
-      const existing = current.find((item) => item.id === product.id)
-      if (existing) {
-        return current.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        )
-      }
+      const existing = current.find((item) => item.id === product.id);
+      const nextCart = existing
+        ? current.map((item) =>
+            item.id === product.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item,
+          )
+        : [...current, { ...product, quantity: 1 }];
 
-      return [...current, { ...product, quantity: 1 }]
-    })
-  }
+      const productLog = getAddedProductsLog();
+      const currentUserName =
+        user?.displayName ||
+        [user?.name?.firstname, user?.name?.lastname]
+          .filter(Boolean)
+          .join(" ") ||
+        user?.username ||
+        "guest";
+      const currentUserPhone = user?.phone || "N/A";
+
+      const existingLogProduct = productLog.find(
+        (item) => item.id === product.id,
+      );
+      const updatedLog = existingLogProduct
+        ? productLog.map((item) =>
+            item.id === product.id
+              ? {
+                  ...item,
+                  quantity: item.quantity + 1,
+                  addedBy: currentUserName,
+                  userPhone: currentUserPhone,
+                  customerPhone: currentUserPhone,
+                  phone: currentUserPhone,
+                }
+              : item,
+          )
+        : [
+            ...productLog,
+            {
+              ...product,
+              quantity: 1,
+              addedBy: currentUserName,
+              userPhone: currentUserPhone,
+              customerPhone: currentUserPhone,
+              phone: currentUserPhone,
+              addedAt: new Date().toISOString(),
+            },
+          ];
+
+      localStorage.setItem("shopEaseAddedProducts", JSON.stringify(updatedLog));
+      return nextCart;
+    });
+  };
 
   const removeFromCart = (id) => {
-    setCart((current) => current.filter((item) => item.id !== id))
-  }
+    setCart((current) => current.filter((item) => item.id !== id));
+  };
 
   const updateQuantity = (id, quantity) => {
     setCart((current) =>
@@ -42,23 +92,23 @@ export function CartProvider({ children }) {
           ? { ...item, quantity: Math.max(1, Number(quantity) || 1) }
           : item,
       ),
-    )
-  }
+    );
+  };
 
-  const clearCart = () => setCart([])
-  const closeCart = () => setDrawerOpen(false)
-  const openCart = () => setDrawerOpen(true)
-  const toggleCart = () => setDrawerOpen((open) => !open)
+  const clearCart = () => setCart([]);
+  const closeCart = () => setDrawerOpen(false);
+  const openCart = () => setDrawerOpen(true);
+  const toggleCart = () => setDrawerOpen((open) => !open);
 
   const itemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
     [cart],
-  )
+  );
 
   const subtotal = useMemo(
     () => cart.reduce((total, item) => total + item.price * item.quantity, 0),
     [cart],
-  )
+  );
 
   const value = useMemo(
     () => ({
@@ -75,9 +125,9 @@ export function CartProvider({ children }) {
       toggleCart,
     }),
     [cart, itemCount, subtotal, drawerOpen],
-  )
+  );
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
