@@ -24,7 +24,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <Box sx={{ minHeight: "calc(100vh - 68px)", background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", p: 2 }}>
+    <Box sx={{ minHeight: "calc(100vh - 68px)", background: "background.default", display: "flex", alignItems: "center", justifyContent: "center", p: 2 }}>
       <Card sx={{ width: "100%", maxWidth: 430, p: 4, borderRadius: 4 }}>
         <Box sx={{ textAlign: "center", mb: 3 }}>
           <ShieldIcon sx={{ fontSize: 48, color: "primary.main" }} />

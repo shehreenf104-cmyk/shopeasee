@@ -28,7 +28,6 @@ function Signup() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [verificationPath, setVerificationPath] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -77,7 +76,6 @@ function Signup() {
     event.preventDefault();
     setError("");
     setSuccess("");
-    setVerificationPath("");
 
     const firstName = form.firstname.trim();
     const lastName = form.lastname.trim();
@@ -139,12 +137,8 @@ function Signup() {
           lastname: lastName,
         },
       });
-      setSuccess(result.message || "Account created. Check your email to verify it before signing in.");
-      if (result.developmentVerificationPath) {
-        setVerificationPath(result.developmentVerificationPath);
-      } else {
-        setTimeout(() => navigate("/login"), 1800);
-      }
+      setSuccess(result.message || "Account created. You can now sign in.");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       setError(err.message || "Unable to create account.");
     } finally {
@@ -156,7 +150,7 @@ function Signup() {
     <Box
       sx={{
         minHeight: "calc(100vh - 68px)",
-        background: "#F8FAFC",
+        background: "background.default",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -170,7 +164,7 @@ function Signup() {
           maxWidth: 520,
           p: { xs: 3, sm: 4.5 },
           boxShadow: "0 24px 64px rgba(0,0,0,0.14)",
-          border: "1px solid rgba(0,0,0,0.05)",
+          border: "1px solid var(--mui-palette-divider)",
           borderRadius: 4,
           position: "relative",
           zIndex: 1,
@@ -324,7 +318,7 @@ function Signup() {
                   sx={{
                     height: 4,
                     borderRadius: 2,
-                    bgcolor: passed ? "success.main" : "grey.300",
+                    bgcolor: passed ? "success.main" : "action.selected",
                   }}
                 />
               ))}
@@ -354,11 +348,6 @@ function Signup() {
             <Alert severity={error ? "error" : "success"}>
               {error || success}
             </Alert>
-          )}
-          {verificationPath && (
-            <Button component={NavLink} to={verificationPath} variant="outlined">
-              Verify email (local development)
-            </Button>
           )}
 
           <Button

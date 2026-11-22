@@ -118,7 +118,7 @@ function Checkout() {
   };
 
   return (
-    <Box sx={{ background: "#F1F5F9", minHeight: "100vh" }}>
+    <Box sx={{ background: "background.default", minHeight: "100vh" }}>
       {/* Page header */}
       <Box
         sx={{
@@ -168,9 +168,9 @@ function Checkout() {
               textAlign: "center",
               py: 12,
               px: 3,
-              background: "white",
+              background: "background.paper",
               borderRadius: 4,
-              border: "1px solid rgba(0,0,0,0.06)",
+              border: "1px solid var(--mui-palette-divider)",
             }}
           >
             <Typography variant="h5" fontWeight={700} gutterBottom>
@@ -192,10 +192,10 @@ function Checkout() {
               maxWidth: 560,
               mx: "auto",
               textAlign: "center",
-              background: "white",
+              background: "background.paper",
               borderRadius: 4,
               p: { xs: 4, md: 6 },
-              border: "1px solid rgba(0,0,0,0.06)",
+              border: "1px solid var(--mui-palette-divider)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
             }}
           >
@@ -268,7 +268,7 @@ function Checkout() {
               <Card
                 elevation={0}
                 sx={{
-                  border: "1px solid rgba(0,0,0,0.06)",
+                  border: "1px solid var(--mui-palette-divider)",
                   borderRadius: 4,
                   overflow: "visible",
                 }}
@@ -366,7 +366,7 @@ function Checkout() {
               <Card
                 elevation={0}
                 sx={{
-                  border: "1px solid rgba(0,0,0,0.06)",
+                  border: "1px solid var(--mui-palette-divider)",
                   borderRadius: 4,
                   position: { md: "sticky" },
                   top: { md: 100 },
@@ -403,8 +403,8 @@ function Checkout() {
                               height: 52,
                               objectFit: "contain",
                               borderRadius: 2,
-                              background: "#F8FAFC",
-                              border: "1px solid rgba(0,0,0,0.05)",
+                              background: "action.hover",
+                              border: "1px solid var(--mui-palette-divider)",
                               p: 0.5,
                               flexShrink: 0,
                             }}
@@ -484,9 +484,9 @@ function Checkout() {
                       justifyContent: "space-between",
                       alignItems: "center",
                       p: 2,
-                      background: "#F8FAFC",
+                      background: "action.hover",
                       borderRadius: 2.5,
-                      border: "1px solid rgba(0,0,0,0.05)",
+                      border: "1px solid var(--mui-palette-divider)",
                     }}
                   >
                     <Typography fontWeight={700} fontSize="1.0625rem">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -11,12 +11,17 @@ import {
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { resetPassword } from "../services/api";
+import { requestPasswordReset, resetPassword } from "../services/api";
 
 const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&]).{8,128}$/;
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
+  const [code, setCode] = useState("");
+  const [info, setInfo] = useState(location.state?.message || "");
+  const [demoCode, setDemoCode] = useState(location.state?.demoCode || "");
+  const [resending, setResending] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +29,6 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const token = searchParams.get("token") || "";
   const passwordChecks = [
     /[A-Z]/.test(password),
     /[a-z]/.test(password),
@@ -37,8 +41,13 @@ export default function ResetPassword() {
   const submit = async (event) => {
     event.preventDefault();
     setError("");
-    if (!token) {
-      setError("The password reset link is invalid or expired.");
+    setInfo("");
+    if (!email.trim()) {
+      setError("Enter the email address you requested the code for.");
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      setError("Enter the 6-digit verification code from your email.");
       return;
     }
     if (!passwordPattern.test(password)) {
@@ -52,7 +61,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const result = await resetPassword({ token, password });
+      const result = await resetPassword({ email: email.trim(), code, password });
       setSuccess(result.message);
       setTimeout(() => navigate("/login", { replace: true }), 1400);
     } catch (requestError) {
@@ -62,12 +71,72 @@ export default function ResetPassword() {
     }
   };
 
+  const resendCode = async () => {
+    setError("");
+    setInfo("");
+    if (!email.trim()) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setResending(true);
+    try {
+      const result = await requestPasswordReset(email.trim());
+      setInfo(result.message);
+      setDemoCode(result.demoCode || "");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
-    <Box sx={{ minHeight: "calc(100vh - 68px)", display: "grid", placeItems: "center", p: 2, bgcolor: "#F8FAFC" }}>
+    <Box sx={{ minHeight: "calc(100vh - 68px)", display: "grid", placeItems: "center", p: 2, bgcolor: "background.default" }}>
       <Card sx={{ width: "100%", maxWidth: 460, p: { xs: 3, sm: 4.5 }, borderRadius: 4 }}>
         <Typography variant="h4" fontWeight={800} gutterBottom>Reset password</Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a new ShopEase password.</Typography>
+        <Typography color="text.secondary" sx={{ mb: 3 }}>
+          Enter the 6-digit code we emailed you and choose a new ShopEase password.
+        </Typography>
         <Box component="form" onSubmit={submit} sx={{ display: "grid", gap: 2 }}>
+          {demoCode ? (
+            <Alert
+              severity="info"
+              action={
+                <Button color="inherit" size="small" sx={{ whiteSpace: "nowrap" }} onClick={() => setCode(demoCode)}>
+                  Use code
+                </Button>
+              }
+              sx={{ alignItems: "center" }}
+            >
+              Your verification code: <strong style={{ letterSpacing: "0.2em" }}>{demoCode}</strong>
+            </Alert>
+          ) : (
+            info && <Alert severity="info">{info}</Alert>
+          )}
+          <TextField
+            label="Email address"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value.slice(0, 254))}
+            slotProps={{ htmlInput: { maxLength: 254, autoComplete: "email" } }}
+            required
+            fullWidth
+          />
+          <TextField
+            label="Verification code"
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                autoComplete: "one-time-code",
+                maxLength: 6,
+                style: { letterSpacing: "0.4em", fontWeight: 700 },
+              },
+            }}
+            required
+            fullWidth
+          />
           <TextField
             label="New password"
             type={showPassword ? "text" : "password"}
@@ -118,7 +187,7 @@ export default function ResetPassword() {
                   sx={{
                     height: 4,
                     borderRadius: 2,
-                    bgcolor: passed ? "success.main" : "grey.300",
+                    bgcolor: passed ? "success.main" : "action.selected",
                   }}
                 />
               ))}
@@ -171,6 +240,9 @@ export default function ResetPassword() {
           {success && <Alert severity="success">{success}</Alert>}
           <Button type="submit" variant="contained" disabled={loading}>
             {loading ? "Updating…" : "Update password"}
+          </Button>
+          <Button onClick={resendCode} disabled={resending}>
+            {resending ? "Sending…" : "Resend code"}
           </Button>
           <Button component={NavLink} to="/login">Back to sign in</Button>
         </Box>

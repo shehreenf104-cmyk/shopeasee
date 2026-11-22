@@ -16,7 +16,6 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "../context/AuthContext";
-import { resendVerification } from "../services/api";
 
 function Login() {
   const { signIn, isAuthenticated, isAdmin, error, loading } = useAuth();
@@ -25,8 +24,6 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState("");
-  const [verificationMessage, setVerificationMessage] = useState("");
-  const [verificationPath, setVerificationPath] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/products";
@@ -51,24 +48,11 @@ function Login() {
     }
   };
 
-  const handleResendVerification = async () => {
-    setFormError("");
-    setVerificationMessage("");
-    setVerificationPath("");
-    try {
-      const result = await resendVerification(identifier.trim());
-      setVerificationMessage(result.message);
-      setVerificationPath(result.developmentVerificationPath || "");
-    } catch (requestError) {
-      setFormError(requestError.message);
-    }
-  };
-
   return (
     <Box
       sx={{
         minHeight: "calc(100vh - 68px)",
-        background: "#F8FAFC",
+        background: "background.default",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -82,7 +66,7 @@ function Login() {
           maxWidth: 460,
           p: { xs: 3, sm: 4.5 },
           boxShadow: "0 24px 64px rgba(0,0,0,0.14)",
-          border: "1px solid rgba(0,0,0,0.05)",
+          border: "1px solid var(--mui-palette-divider)",
           borderRadius: 4,
           position: "relative",
           zIndex: 1,
@@ -204,14 +188,6 @@ function Login() {
           {(formError || error) && (
             <Alert severity="error">{formError || error}</Alert>
           )}
-          {verificationMessage && (
-            <Alert severity="info">{verificationMessage}</Alert>
-          )}
-          {verificationPath && (
-            <Button component={NavLink} to={verificationPath} variant="outlined">
-              Verify email (local development)
-            </Button>
-          )}
 
           <Button
             type="submit"
@@ -224,17 +200,6 @@ function Login() {
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </Box>
-
-        {identifier.includes("@") && (
-          <Button
-            onClick={handleResendVerification}
-            size="small"
-            fullWidth
-            sx={{ mt: 1.5 }}
-          >
-            Resend verification email
-          </Button>
-        )}
 
         <Divider sx={{ my: 3 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={500}>

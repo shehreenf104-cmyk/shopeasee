@@ -71,7 +71,7 @@ function ProductCard({ product }) {
               fontWeight: 600,
               fontSize: '0.7rem',
               height: 24,
-              border: '1px solid rgba(0,0,0,0.06)',
+              border: '1px solid var(--mui-palette-divider)',
               textTransform: 'capitalize',
             }}
           />

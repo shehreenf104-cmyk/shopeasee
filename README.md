@@ -21,22 +21,22 @@ npm install
 npm run dev
 ```
 
-The React app runs through Vite and the API runs on `http://localhost:5000`.
+The React app runs through Vite and the API runs on `http://localhost:5001`.
 
 ## Authentication Setup
 
-In local development, when SMTP is not configured, signup and password recovery show one-time verification/reset links in the app so you can test the complete flow. Do not use this development link mode in production. For real deployments, configure SMTP so ShopEase can send verification and password-reset links. Set these in your local `.env`:
+Password recovery emails a 6-digit verification code to the account's email address, so SMTP must be configured for "Forgot password" to work (including in local development). Set these in your local `.env`:
 
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and optionally `SMTP_FROM`
 - `JWT_SECRET` to a unique random secret of at least 32 characters
 - `ADMIN_EMAIL` and a strong `ADMIN_PASSWORD`
 
-New accounts must verify their email before signing in. Verification links expire after 24 hours; password-reset links expire after 30 minutes. Standard sign-in sessions expire after 12 hours; selecting **Remember me** extends the session to 7 days. Set `NODE_ENV=production` in production to disable local development links.
+New accounts can sign in immediately after signup; no email verification step is required. Password-reset codes expire after 10 minutes and are invalidated after 5 incorrect attempts. Standard sign-in sessions expire after 12 hours; selecting **Remember me** extends the session to 7 days.
 
 Google and Facebook sign-in are enabled when their provider credentials are configured. Register these callback URLs with the providers:
 
-- `http://localhost:5000/api/auth/google/callback`
-- `http://localhost:5000/api/auth/facebook/callback`
+- `http://localhost:5001/api/auth/google/callback`
+- `http://localhost:5001/api/auth/facebook/callback`
 
 Set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and `FACEBOOK_APP_ID` / `FACEBOOK_APP_SECRET` in `.env`. For a deployed site, update the callback URLs and `FRONTEND_URL` to the HTTPS deployment URLs.
 

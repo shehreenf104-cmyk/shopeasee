@@ -2,6 +2,8 @@ import MenuIcon from '@mui/icons-material/Menu'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import StorefrontIcon from '@mui/icons-material/Storefront'
 import CloseIcon from '@mui/icons-material/Close'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
+import LightModeIcon from '@mui/icons-material/LightMode'
 import {
   AppBar,
   Badge,
@@ -15,7 +17,9 @@ import {
   ListItemButton,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
+  useColorScheme,
   useScrollTrigger,
 } from '@mui/material'
 import { useState } from 'react'
@@ -50,6 +54,8 @@ function TopBar() {
       : authNavItems
     : publicNavItems;
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 10 });
+  const { mode, systemMode, setMode } = useColorScheme();
+  const isDark = (mode === "system" ? systemMode : mode) === "dark";
 
   return (
     <AppBar
@@ -223,6 +229,31 @@ function TopBar() {
             </Button>
           </Box>
         )}
+
+        {/* Theme toggle */}
+        <Tooltip title={isDark ? "Switch to light theme" : "Switch to dark theme"}>
+          <IconButton
+            onClick={() => setMode(isDark ? "light" : "dark")}
+            aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+            sx={{
+              color: "rgba(255,255,255,0.85)",
+              ml: 0.5,
+              width: 40,
+              height: 40,
+              borderRadius: 2.5,
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              "&:hover": {
+                background: "rgba(255,255,255,0.14)",
+                color: "white",
+                transform: "scale(1.05)",
+              },
+              transition: "all 0.2s ease",
+            }}
+          >
+            {isDark ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />}
+          </IconButton>
+        </Tooltip>
 
         {/* Cart button */}
         {isAuthenticated && (

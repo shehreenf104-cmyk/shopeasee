@@ -81,7 +81,7 @@ function Products() {
   }, [products, search, category]);
 
   return (
-    <Box sx={{ background: "#F1F5F9", minHeight: "100vh" }}>
+    <Box sx={{ background: "background.default", minHeight: "100vh" }}>
       {/* Page header */}
       <Box
         sx={{
@@ -122,11 +122,11 @@ function Products() {
         {/* Search & filter panel */}
         <Box
           sx={{
-            background: "white",
+            background: "background.paper",
             borderRadius: 3,
             p: { xs: 2.5, md: 3 },
             mb: 4,
-            border: "1px solid rgba(0,0,0,0.06)",
+            border: "1px solid var(--mui-palette-divider)",
             boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
           }}
         >

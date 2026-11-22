@@ -5,7 +5,7 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { createHash } from "node:crypto";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { encode } from "gpt-tokenizer";
 import nodemailer from "nodemailer";
 import passport from "passport";
@@ -15,7 +15,7 @@ import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 
 const app = express();
-const PORT = Number(process.env.PORT || 5000);
+const PORT = Number(process.env.PORT || 5001);
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/shopease";
 const JWT_SECRET =
   process.env.JWT_SECRET ||
@@ -32,7 +32,6 @@ app.use(express.json({ limit: "20kb" }));
 app.use(passport.initialize());
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const SMTP_CONFIGURED = Boolean(
   process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
 );
@@ -71,6 +70,7 @@ const userSchema = new mongoose.Schema({
   emailVerificationExpires: Date,
   passwordResetTokenHash: String,
   passwordResetExpires: Date,
+  passwordResetAttempts: { type: Number, default: 0 },
   tokenVersion: { type: Number, default: 0 },
 }, { timestamps: true });
 
@@ -171,10 +171,6 @@ const createAuthRateLimit = (limit, message) => rateLimit({
 const signupRateLimit = createAuthRateLimit(
   5,
   "Too many signup attempts. Please try again later.",
-);
-const verificationRateLimit = createAuthRateLimit(
-  10,
-  "Too many verification attempts. Please try again later.",
 );
 const loginRateLimit = createAuthRateLimit(
   8,
@@ -423,7 +419,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL:
           process.env.GOOGLE_CALLBACK_URL ||
-          "http://localhost:5000/api/auth/google/callback",
+          "http://localhost:5001/api/auth/google/callback",
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
@@ -452,7 +448,7 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
         clientSecret: process.env.FACEBOOK_APP_SECRET,
         callbackURL:
           process.env.FACEBOOK_CALLBACK_URL ||
-          "http://localhost:5000/api/auth/facebook/callback",
+          "http://localhost:5001/api/auth/facebook/callback",
         profileFields: ["id", "emails", "name"],
       },
       async (_accessToken, _refreshToken, profile, done) => {
@@ -593,48 +589,21 @@ app.post("/api/auth/signup", signupRateLimit, async (req, res) => {
       return res.status(400).json({ message: "Please check your name, username, Gmail address, phone, and password requirements." });
     }
 
-    if (!emailTransport && IS_PRODUCTION) {
-      return res.status(503).json({ message: "Email verification is not configured. Please contact the ShopEase administrator." });
-    }
     const existing = await User.findOne({
       $or: [{ username: normalizedUsername }, { email: normalizedEmail }],
     });
     if (existing) return res.status(409).json({ message: "Username or email already exists." });
 
-    const verificationToken = createEmailToken();
-    const user = await User.create({
+    await User.create({
       username: normalizedUsername,
       email: normalizedEmail,
       password: await bcrypt.hash(password, 12),
       name: { firstname: firstName, lastname: lastName },
       phone: String(phone || "N/A").trim(),
-      emailVerified: false,
-      emailVerificationTokenHash: hashSecret(verificationToken),
-      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      emailVerified: true,
     });
-    const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(verificationToken)}`;
-    if (emailTransport) {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: "Verify your ShopEase account",
-          text: `Welcome to ShopEase. Verify your email within 24 hours: ${verifyUrl}`,
-          html: `<p>Welcome to ShopEase.</p><p><a href="${verifyUrl}">Verify your email</a>. This link expires in 24 hours.</p>`,
-        });
-      } catch (error) {
-        await User.deleteOne({ _id: user._id });
-        throw error;
-      }
-    }
 
-    res.status(201).json({
-      message: emailTransport
-        ? "Account created. Check your email for a verification link before signing in."
-        : "Account created. Open the development verification link below before signing in.",
-      ...(!emailTransport && {
-        developmentVerificationPath: `/verify-email?token=${encodeURIComponent(verificationToken)}`,
-      }),
-    });
+    res.status(201).json({ message: "Account created. You can now sign in to ShopEase." });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: "Username or email already exists." });
     console.error("Signup failed:", error.message);
@@ -642,55 +611,6 @@ app.post("/api/auth/signup", signupRateLimit, async (req, res) => {
       message: error.status ? error.message : "Unable to create the account right now.",
     });
   }
-});
-
-app.post("/api/auth/verify-email", verificationRateLimit, async (req, res) => {
-  const { token } = req.body;
-  if (typeof token !== "string" || token.length !== 64) {
-    return res.status(400).json({ message: "This verification link is invalid or expired." });
-  }
-  const user = await User.findOneAndUpdate(
-    {
-      emailVerificationTokenHash: hashSecret(token),
-      emailVerificationExpires: { $gt: new Date() },
-    },
-    {
-      $set: { emailVerified: true },
-      $unset: { emailVerificationTokenHash: 1, emailVerificationExpires: 1 },
-    },
-    { new: true },
-  );
-  if (!user) return res.status(400).json({ message: "This verification link is invalid or expired." });
-  res.json({ message: "Email verified. You can now sign in to ShopEase." });
-});
-
-app.post("/api/auth/resend-verification", verificationRateLimit, async (req, res) => {
-  const email = String(req.body.email || "").trim().toLowerCase();
-  const genericMessage = "If the account needs verification, a new link will be sent to its email address.";
-  if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(email)) return res.json({ message: genericMessage });
-  const user = await User.findOne({ email, emailVerified: false });
-  if (!user) return res.json({ message: genericMessage });
-  if (!emailTransport && IS_PRODUCTION) return res.status(503).json({ message: "Email delivery is not configured. Please contact the ShopEase administrator." });
-
-  const token = createEmailToken();
-  user.emailVerificationTokenHash = hashSecret(token);
-  user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await user.save();
-  const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
-  if (emailTransport) {
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your ShopEase account",
-      text: `Verify your email within 24 hours: ${verifyUrl}`,
-      html: `<p><a href="${verifyUrl}">Verify your ShopEase email</a>. This link expires in 24 hours.</p>`,
-    });
-  }
-  res.json({
-    message: genericMessage,
-    ...(!emailTransport && {
-      developmentVerificationPath: `/verify-email?token=${encodeURIComponent(token)}`,
-    }),
-  });
 });
 
 app.post("/api/auth/login", loginRateLimit, authSlowDown, async (req, res) => {
@@ -718,10 +638,7 @@ app.post("/api/auth/login", loginRateLimit, authSlowDown, async (req, res) => {
     if (user.disabled) {
       return res.status(401).json({ message: "Invalid username/email or password." });
     }
-    if (!user.emailVerified) {
-      return res.status(401).json({ message: "Invalid username/email or password." });
-    }
-
+    user.emailVerified = true;
     user.lastLogin = new Date();
     await user.save();
 
@@ -751,79 +668,99 @@ app.post("/api/auth/logout", requireAuth, async (req, res) => {
   res.json({ message: "Signed out." });
 });
 
+const RESET_CODE_TTL_MS = 10 * 60 * 1000;
+const RESET_CODE_MAX_ATTEMPTS = 5;
+const hashResetCode = (userId, code) => hashSecret(`${userId}:${code}`);
+
 app.post("/api/auth/forgot-password", passwordRecoveryRateLimit, async (req, res) => {
   const genericMessage =
-    "If an account exists for that email, password reset instructions will be sent.";
+    "If an account exists for that email, a verification code has been sent to it.";
   const email = String(req.body.email || "").trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ message: "Enter a valid email address." });
   }
-  if (!emailTransport && IS_PRODUCTION) {
-    return res.status(503).json({ message: "Password recovery email is not configured. Please contact the ShopEase administrator." });
-  }
-
-  const user = await User.findOne({
-    email,
-    emailVerified: true,
-    disabled: { $ne: true },
-  });
+  const user = await User.findOne({ email, disabled: { $ne: true } });
   if (user) {
-    const token = createEmailToken();
-    user.passwordResetTokenHash = hashSecret(token);
-    user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
+    const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    user.passwordResetTokenHash = hashResetCode(user._id, code);
+    user.passwordResetExpires = new Date(Date.now() + RESET_CODE_TTL_MS);
+    user.passwordResetAttempts = 0;
     await user.save();
-    const resetUrl = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
-    if (emailTransport) {
+    if (!emailTransport) {
+      // Demo mode: no SMTP configured, so hand the code back instead of emailing it.
+      console.log(`Password reset code for ${user.email}: ${code}`);
+      return res.json({ message: "Your verification code is shown below.", demoCode: code });
+    }
+    try {
       await sendEmail({
         to: user.email,
-        subject: "Reset your ShopEase password",
-        text: `Use this link within 30 minutes to reset your ShopEase password: ${resetUrl}`,
-        html: `<p><a href="${resetUrl}">Reset your ShopEase password</a>. This link expires in 30 minutes.</p>`,
+        subject: "Your ShopEase password reset code",
+        text: `Your ShopEase verification code is ${code}. It expires in 10 minutes. If you did not request a password reset, you can ignore this email.`,
+        html: `<p>Your ShopEase verification code is:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${code}</p><p>It expires in 10 minutes. If you did not request a password reset, you can ignore this email.</p>`,
       });
-    } else {
-      return res.json({
-        message: genericMessage,
-        developmentResetPath: `/reset-password?token=${encodeURIComponent(token)}`,
-      });
+    } catch (error) {
+      console.error("Password reset email failed:", error.message);
+      return res.status(502).json({ message: "Unable to send the verification code right now. Please try again." });
     }
   }
   res.json({ message: genericMessage });
 });
 
 app.post("/api/auth/reset-password", passwordRecoveryRateLimit, async (req, res) => {
-  const { token, password } = req.body;
+  const { password } = req.body;
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const code = String(req.body.code || "").trim();
+  const invalidMessage = "The verification code is invalid or expired.";
   if (
-    typeof token !== "string" ||
-    token.length !== 64 ||
+    email.length > 254 ||
+    !/^\d{6}$/.test(code) ||
     typeof password !== "string" ||
     !/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&]).{8,128}$/.test(password)
   ) {
-    return res.status(400).json({ message: "The reset link or new password is invalid." });
+    return res.status(400).json({ message: "The verification code or new password is invalid." });
   }
-  const resetTokenHash = hashSecret(token);
+
   const user = await User.findOne({
-    passwordResetTokenHash: resetTokenHash,
-    passwordResetExpires: { $gt: new Date() },
-    emailVerified: true,
+    email,
     disabled: { $ne: true },
-  }).select("_id");
-  if (!user) return res.status(400).json({ message: "The reset link is invalid or expired." });
+    passwordResetTokenHash: { $exists: true },
+    passwordResetExpires: { $gt: new Date() },
+  }).select("_id passwordResetTokenHash passwordResetAttempts");
+  if (!user || (user.passwordResetAttempts || 0) >= RESET_CODE_MAX_ATTEMPTS) {
+    return res.status(400).json({ message: invalidMessage });
+  }
+
+  const expected = Buffer.from(user.passwordResetTokenHash, "hex");
+  const actual = Buffer.from(hashResetCode(user._id, code), "hex");
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+    const attempts = (user.passwordResetAttempts || 0) + 1;
+    await User.updateOne(
+      { _id: user._id },
+      attempts >= RESET_CODE_MAX_ATTEMPTS
+        ? { $unset: { passwordResetTokenHash: 1, passwordResetExpires: 1 }, $set: { passwordResetAttempts: 0 } }
+        : { $set: { passwordResetAttempts: attempts } },
+    );
+    return res.status(400).json({
+      message: attempts >= RESET_CODE_MAX_ATTEMPTS
+        ? "Too many incorrect codes. Please request a new verification code."
+        : invalidMessage,
+    });
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
   const updatedUser = await User.findOneAndUpdate(
     {
       _id: user._id,
-      passwordResetTokenHash: resetTokenHash,
+      passwordResetTokenHash: user.passwordResetTokenHash,
       passwordResetExpires: { $gt: new Date() },
-      emailVerified: true,
-      disabled: { $ne: true },
     },
     {
-      $set: { password: passwordHash },
+      $set: { password: passwordHash, emailVerified: true, passwordResetAttempts: 0 },
       $unset: { passwordResetTokenHash: 1, passwordResetExpires: 1 },
       $inc: { tokenVersion: 1 },
     },
   );
-  if (!updatedUser) return res.status(400).json({ message: "The reset link is invalid or expired." });
+  if (!updatedUser) return res.status(400).json({ message: invalidMessage });
   res.json({ message: "Password reset successfully. Please sign in with your new password." });
 });
 

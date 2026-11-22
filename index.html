@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>shopease</title>
+    <script>
+      // Apply the saved light/dark theme before React loads to avoid a flash.
+      (function () {
+        try {
+          var mode = localStorage.getItem("mui-mode") || "system";
+          if (mode === "system") {
+            mode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.add(mode);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

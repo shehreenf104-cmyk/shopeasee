@@ -84,7 +84,7 @@ function Admin() {
 
   return (
     <Box
-      sx={{ background: "#F1F5F9", minHeight: "100vh", py: { xs: 4, md: 6 } }}
+      sx={{ background: "background.default", minHeight: "100vh", py: { xs: 4, md: 6 } }}
     >
       <Container maxWidth="lg">
         <Box
@@ -115,7 +115,7 @@ function Admin() {
             <Box>
               <Typography
                 variant="overline"
-                sx={{ color: "#1D4ED8", letterSpacing: "0.12em" }}
+                sx={{ color: "primary.main", letterSpacing: "0.12em" }}
               >
                 ADMIN PANEL
               </Typography>

@@ -19,6 +19,7 @@ const categories = [
     label: "Electronics",
     icon: <DevicesIcon sx={{ fontSize: 36, color: '#2563EB' }} />,
     bg: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)',
+    darkBg: 'rgba(37,99,235,0.12)',
     border: 'rgba(37,99,235,0.15)',
     desc: 'Laptops, phones & gadgets',
   },
@@ -26,6 +27,7 @@ const categories = [
     label: "Jewelry",
     icon: <DiamondIcon sx={{ fontSize: 36, color: '#7C3AED' }} />,
     bg: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)',
+    darkBg: 'rgba(124,58,237,0.12)',
     border: 'rgba(124,58,237,0.15)',
     desc: 'Rings, necklaces & more',
   },
@@ -33,6 +35,7 @@ const categories = [
     label: "Men's Clothing",
     icon: <CheckroomIcon sx={{ fontSize: 36, color: '#059669' }} />,
     bg: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)',
+    darkBg: 'rgba(5,150,105,0.12)',
     border: 'rgba(5,150,105,0.15)',
     desc: 'Shirts, jackets & casual wear',
   },
@@ -40,6 +43,7 @@ const categories = [
     label: "Women's Clothing",
     icon: <StarIcon sx={{ fontSize: 36, color: '#FF6B35' }} />,
     bg: 'linear-gradient(135deg, #FFF7ED, #FFEDD5)',
+    darkBg: 'rgba(255,107,53,0.12)',
     border: 'rgba(255,107,53,0.15)',
     desc: 'Dresses, tops & accessories',
   },
@@ -280,7 +284,7 @@ function Home() {
       </Box>
 
       {/* ── Stats strip ── */}
-      <Box sx={{ background: 'white', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <Box sx={{ background: 'background.paper', borderBottom: '1px solid var(--mui-palette-divider)' }}>
         <Container maxWidth="lg">
           <Grid container>
             {[
@@ -298,8 +302,8 @@ function Home() {
                   py: { xs: 3, md: 4 },
                   px: 3,
                   textAlign: 'center',
-                  borderRight: i < 3 ? '1px solid rgba(0,0,0,0.06)' : 'none',
-                  borderBottom: { xs: i < 2 ? '1px solid rgba(0,0,0,0.06)' : 'none', sm: 'none' },
+                  borderRight: i < 3 ? '1px solid var(--mui-palette-divider)' : 'none',
+                  borderBottom: { xs: i < 2 ? '1px solid var(--mui-palette-divider)' : 'none', sm: 'none' },
                 }}
               >
                 <Typography
@@ -326,7 +330,7 @@ function Home() {
       </Box>
 
       {/* ── Categories ── */}
-      <Box sx={{ py: { xs: 8, md: 12 }, background: '#F8FAFC' }}>
+      <Box sx={{ py: { xs: 8, md: 12 }, background: 'background.default' }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
             <Typography
@@ -361,6 +365,7 @@ function Home() {
                     border: `1px solid ${cat.border}`,
                     borderRadius: 4,
                     background: cat.bg,
+                    '.dark &': { background: cat.darkBg },
                     transition: 'all 0.28s ease',
                     cursor: 'default',
                     '&:hover': {
@@ -374,7 +379,7 @@ function Home() {
                       width: 72,
                       height: 72,
                       borderRadius: '50%',
-                      background: 'white',
+                      background: 'background.paper',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',

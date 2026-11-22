@@ -128,7 +128,7 @@ function CartDrawer() {
                 width: 72,
                 height: 72,
                 borderRadius: "50%",
-                background: "#F1F5F9",
+                background: "background.default",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -169,7 +169,7 @@ function CartDrawer() {
                     objectFit: "contain",
                     borderRadius: 2.5,
                     background: "linear-gradient(135deg, #F8FAFC, #F1F5F9)",
-                    border: "1px solid rgba(0,0,0,0.06)",
+                    border: "1px solid var(--mui-palette-divider)",
                     p: 1,
                     flexShrink: 0,
                   }}
@@ -212,7 +212,7 @@ function CartDrawer() {
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        border: "1px solid rgba(0,0,0,0.12)",
+                        border: "1px solid var(--mui-palette-divider)",
                         borderRadius: 2,
                         overflow: "hidden",
                       }}
@@ -291,8 +291,8 @@ function CartDrawer() {
             flexShrink: 0,
             px: 2.5,
             py: 3,
-            borderTop: "1px solid rgba(0,0,0,0.08)",
-            background: "white",
+            borderTop: "1px solid var(--mui-palette-divider)",
+            background: "background.paper",
           }}
         >
           <Box
@@ -338,7 +338,7 @@ function CartDrawer() {
               py: 1.2,
               color: "text.secondary",
               fontWeight: 500,
-              "&:hover": { background: "rgba(0,0,0,0.04)" },
+              "&:hover": { background: "action.hover" },
             }}
           >
             Continue Shopping

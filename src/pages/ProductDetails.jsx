@@ -23,7 +23,7 @@ function ProductDetailsSkeleton() {
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
       <Skeleton width={120} height={36} sx={{ mb: 3, borderRadius: 2 }} />
-      <Paper elevation={0} sx={{ p: { xs: 2.5, md: 5 }, border: '1px solid rgba(0,0,0,0.06)' }}>
+      <Paper elevation={0} sx={{ p: { xs: 2.5, md: 5 }, border: '1px solid var(--mui-palette-divider)' }}>
         <Grid container spacing={5}>
           <Grid item xs={12} md={5}>
             <Skeleton variant="rectangular" height={420} sx={{ borderRadius: 4 }} />
@@ -96,7 +96,7 @@ function ProductDetails() {
   }
 
   return (
-    <Box sx={{ background: '#F1F5F9', minHeight: '100vh', py: { xs: 4, md: 6 } }}>
+    <Box sx={{ background: 'background.default', minHeight: '100vh', py: { xs: 4, md: 6 } }}>
       <Container maxWidth="lg">
         {/* Back button */}
         <Button
@@ -109,13 +109,13 @@ function ProductDetails() {
             fontSize: '0.9rem',
             px: 2,
             py: 0.875,
-            background: 'white',
-            border: '1px solid rgba(0,0,0,0.1)',
+            background: 'background.paper',
+            border: '1px solid var(--mui-palette-divider)',
             borderRadius: 2.5,
             '&:hover': {
-              background: '#F8FAFC',
+              background: 'action.hover',
               color: 'text.primary',
-              borderColor: 'rgba(0,0,0,0.18)',
+              borderColor: 'divider',
             },
           }}
         >
@@ -126,7 +126,7 @@ function ProductDetails() {
           elevation={0}
           sx={{
             p: { xs: 3, md: 5 },
-            border: '1px solid rgba(0,0,0,0.06)',
+            border: '1px solid var(--mui-palette-divider)',
             borderRadius: 4,
           }}
         >
@@ -142,7 +142,7 @@ function ProductDetails() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   aspectRatio: '1 / 1',
-                  border: '1px solid rgba(0,0,0,0.05)',
+                  border: '1px solid var(--mui-palette-divider)',
                   position: 'sticky',
                   top: 100,
                 }}
@@ -172,7 +172,7 @@ function ProductDetails() {
                     size="small"
                     sx={{
                       background: 'rgba(37,99,235,0.1)',
-                      color: '#1D4ED8',
+                      color: 'primary.main',
                       fontWeight: 600,
                       fontSize: '0.75rem',
                       textTransform: 'capitalize',
@@ -229,7 +229,7 @@ function ProductDetails() {
                 </Box>
 
                 {/* Divider */}
-                <Box sx={{ borderTop: '1px solid rgba(0,0,0,0.07)', pt: 0.5 }} />
+                <Box sx={{ borderTop: '1px solid var(--mui-palette-divider)', pt: 0.5 }} />
 
                 {/* Description */}
                 <Box>

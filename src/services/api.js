@@ -167,24 +167,6 @@ export const signupUser = async (userData) => {
   return handleResponse(response);
 };
 
-export const verifyEmail = async (token) => {
-  const response = await fetch(`${BASE_URL}/auth/verify-email`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token }),
-  });
-  return handleResponse(response);
-};
-
-export const resendVerification = async (email) => {
-  const response = await fetch(`${BASE_URL}/auth/resend-verification`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  return handleResponse(response);
-};
-
 export const requestPasswordReset = async (email) => {
   const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
     method: "POST",
@@ -194,11 +176,11 @@ export const requestPasswordReset = async (email) => {
   return handleResponse(response);
 };
 
-export const resetPassword = async ({ token, password }) => {
+export const resetPassword = async ({ email, code, password }) => {
   const response = await fetch(`${BASE_URL}/auth/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, password }),
+    body: JSON.stringify({ email, code, password }),
   });
   return handleResponse(response);
 };

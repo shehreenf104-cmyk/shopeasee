@@ -1,25 +1,22 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Alert, Box, Button, Card, TextField, Typography } from "@mui/material";
 import { requestPasswordReset } from "../services/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [resetPath, setResetPath] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const submit = async (event) => {
     event.preventDefault();
     setError("");
-    setMessage("");
-    setResetPath("");
     setLoading(true);
     try {
-      const result = await requestPasswordReset(email.trim());
-      setMessage(result.message);
-      setResetPath(result.developmentResetPath || "");
+      const normalizedEmail = email.trim();
+      const result = await requestPasswordReset(normalizedEmail);
+      navigate("/reset-password", { state: { email: normalizedEmail, message: result.message, demoCode: result.demoCode } });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -28,11 +25,11 @@ export default function ForgotPassword() {
   };
 
   return (
-    <Box sx={{ minHeight: "calc(100vh - 68px)", display: "grid", placeItems: "center", p: 2, bgcolor: "#F8FAFC" }}>
+    <Box sx={{ minHeight: "calc(100vh - 68px)", display: "grid", placeItems: "center", p: 2, bgcolor: "background.default" }}>
       <Card sx={{ width: "100%", maxWidth: 460, p: { xs: 3, sm: 4.5 }, borderRadius: 4 }}>
         <Typography variant="h4" fontWeight={800} gutterBottom>Forgot password?</Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Enter your email address and, if an account matches, we’ll email a secure reset link.
+          Enter your email address and, if an account matches, we’ll email you a 6-digit verification code.
         </Typography>
         <Box component="form" onSubmit={submit} sx={{ display: "grid", gap: 2 }}>
           <TextField
@@ -45,14 +42,8 @@ export default function ForgotPassword() {
             fullWidth
           />
           {error && <Alert severity="error">{error}</Alert>}
-          {message && <Alert severity="success">{message}</Alert>}
-          {resetPath && (
-            <Button component={NavLink} to={resetPath} variant="outlined">
-              Reset password (local development)
-            </Button>
-          )}
           <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? "Sending…" : "Send reset link"}
+            {loading ? "Sending…" : "Send verification code"}
           </Button>
           <Button component={NavLink} to="/login">Back to sign in</Button>
         </Box>

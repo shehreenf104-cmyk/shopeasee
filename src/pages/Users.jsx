@@ -102,7 +102,7 @@ function Users() {
   }, []);
 
   return (
-    <Box sx={{ background: "#F1F5F9", minHeight: "100vh" }}>
+    <Box sx={{ background: "background.default", minHeight: "100vh" }}>
       {/* Page header */}
       <Box
         sx={{
@@ -168,7 +168,7 @@ function Users() {
                     elevation={0}
                     sx={{
                       height: "100%",
-                      border: "1px solid rgba(0,0,0,0.06)",
+                      border: "1px solid var(--mui-palette-divider)",
                       borderRadius: 3,
                       "&:hover": {
                         boxShadow: "0 12px 40px rgba(0,0,0,0.1)",
@@ -213,7 +213,7 @@ function Users() {
                           <Typography
                             variant="caption"
                             sx={{
-                              color: "#64748B",
+                              color: "text.secondary",
                               fontWeight: 600,
                               background: "rgba(37,99,235,0.08)",
                               px: 1,

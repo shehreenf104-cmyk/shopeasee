@@ -15,7 +15,6 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail";
 import OAuthCallback from "./pages/OAuthCallback";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
@@ -28,30 +27,43 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 
+const brandPalette = {
+  primary: {
+    main: "#2563EB",
+    light: "#3B82F6",
+    dark: "#1D4ED8",
+    contrastText: "#ffffff",
+  },
+  secondary: {
+    main: "#FF6B35",
+    light: "#FF8C5A",
+    dark: "#E55A2B",
+    contrastText: "#ffffff",
+  },
+  error: { main: "#EF4444" },
+  success: { main: "#10B981" },
+};
+
 const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#2563EB",
-      light: "#3B82F6",
-      dark: "#1D4ED8",
-      contrastText: "#ffffff",
+  cssVariables: { colorSchemeSelector: "class" },
+  colorSchemes: {
+    light: {
+      palette: {
+        ...brandPalette,
+        background: { default: "#F1F5F9", paper: "#ffffff" },
+        text: { primary: "#0F172A", secondary: "#64748B" },
+        divider: "rgba(15,23,42,0.08)",
+      },
     },
-    secondary: {
-      main: "#FF6B35",
-      light: "#FF8C5A",
-      dark: "#E55A2B",
-      contrastText: "#ffffff",
+    dark: {
+      palette: {
+        ...brandPalette,
+        primary: { ...brandPalette.primary, main: "#3B82F6", light: "#60A5FA" },
+        background: { default: "#0B1120", paper: "#131C2E" },
+        text: { primary: "#E2E8F0", secondary: "#94A3B8" },
+        divider: "rgba(148,163,184,0.16)",
+      },
     },
-    background: {
-      default: "#F1F5F9",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#0F172A",
-      secondary: "#64748B",
-    },
-    error: { main: "#EF4444" },
-    success: { main: "#10B981" },
   },
   typography: {
     fontFamily: [
@@ -133,7 +145,7 @@ const theme = createTheme({
           borderWidth: "1.5px",
           "&:hover": {
             borderWidth: "1.5px",
-            background: "rgba(37,99,235,0.04)",
+            background: "rgba(37,99,235,0.08)",
           },
         },
         outlinedSecondary: {
@@ -147,31 +159,34 @@ const theme = createTheme({
     },
     MuiCard: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           borderRadius: 16,
           boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.04)",
           transition: "box-shadow 0.25s ease, transform 0.25s ease",
-          border: "1px solid rgba(0,0,0,0.05)",
-        },
+          border: `1px solid ${theme.vars.palette.divider}`,
+          ...theme.applyStyles("dark", {
+            boxShadow: "0 1px 4px rgba(0,0,0,0.4), 0 6px 20px rgba(0,0,0,0.25)",
+          }),
+        }),
       },
     },
     MuiPaper: {
       styleOverrides: {
-        root: { borderRadius: 16 },
-        elevation3: {
+        root: { borderRadius: 16, backgroundImage: "none" },
+        elevation3: ({ theme }) => ({
           boxShadow: "0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-          border: "1px solid rgba(0,0,0,0.04)",
-        },
+          border: `1px solid ${theme.vars.palette.divider}`,
+        }),
       },
     },
     MuiTextField: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           "& .MuiOutlinedInput-root": {
             borderRadius: 10,
-            background: "#ffffff",
+            background: theme.vars.palette.background.paper,
             transition: "box-shadow 0.2s ease",
-            "& fieldset": { borderColor: "rgba(0,0,0,0.14)" },
+            "& fieldset": { borderColor: "rgba(100,116,139,0.35)" },
             "&:hover fieldset": { borderColor: "#2563EB" },
             "&.Mui-focused": { boxShadow: "0 0 0 3px rgba(37,99,235,0.12)" },
             "&.Mui-focused fieldset": {
@@ -179,8 +194,16 @@ const theme = createTheme({
               borderWidth: "1.5px",
             },
           },
-          "& .MuiInputLabel-root.Mui-focused": { color: "#2563EB" },
-        },
+          "& .MuiInputLabel-root.Mui-focused": { color: theme.vars.palette.primary.main },
+          ...theme.applyStyles("dark", {
+            // Browser autofill paints a light-blue box; keep it on-theme.
+            "& input:-webkit-autofill": {
+              WebkitBoxShadow: `0 0 0 100px ${theme.vars.palette.background.paper} inset`,
+              WebkitTextFillColor: theme.vars.palette.text.primary,
+              caretColor: theme.vars.palette.text.primary,
+            },
+          }),
+        }),
       },
     },
     MuiChip: {
@@ -214,7 +237,7 @@ const theme = createTheme({
       styleOverrides: { root: { borderRadius: 10 } },
     },
     MuiDivider: {
-      styleOverrides: { root: { borderColor: "rgba(0,0,0,0.06)" } },
+      styleOverrides: { root: ({ theme }) => ({ borderColor: theme.vars.palette.divider }) },
     },
     MuiIconButton: {
       styleOverrides: {
@@ -282,7 +305,6 @@ function App() {
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/oauth/callback" element={<OAuthCallback />} />
                   <Route
                     path="/products"

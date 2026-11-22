@@ -117,9 +117,9 @@ export default function Help({ embedded = false }) {
     <Box
       sx={
         embedded
-          ? { height: "100%", background: "white" }
+          ? { height: "100%", background: "background.paper" }
           : {
-              background: "#F1F5F9",
+              background: "background.default",
               minHeight: "calc(100vh - 68px)",
               py: { xs: 4, md: 6 },
             }
@@ -236,7 +236,7 @@ export default function Help({ embedded = false }) {
                     py: 1.25,
                     borderRadius: 2.5,
                     bgcolor:
-                      message.role === "user" ? "primary.main" : "#F1F5F9",
+                      message.role === "user" ? "primary.main" : "action.hover",
                     color: message.role === "user" ? "white" : "text.primary",
                     whiteSpace: "pre-line",
                     overflowWrap: "anywhere",

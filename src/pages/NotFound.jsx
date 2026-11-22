@@ -7,7 +7,7 @@ function NotFound() {
     <Box
       sx={{
         minHeight: 'calc(100vh - 68px)',
-        background: 'linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%)',
+        background: 'background.default',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -55,7 +55,7 @@ function NotFound() {
           fontWeight={800}
           sx={{
             mb: 2,
-            background: 'linear-gradient(135deg, #0F172A, #334155)',
+            background: 'linear-gradient(135deg, var(--mui-palette-text-primary), var(--mui-palette-text-secondary))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',

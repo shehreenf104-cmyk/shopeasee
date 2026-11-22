@@ -3,8 +3,6 @@
 :root {
   box-sizing: border-box;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #0F172A;
-  background: #F1F5F9;
 }
 
 *, *::before, *::after {
@@ -21,8 +19,6 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: #F1F5F9;
-  color: #0F172A;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -47,7 +43,7 @@ img {
 }
 
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: var(--mui-palette-background-default, #F1F5F9);
 }
 
 ::-webkit-scrollbar-thumb {
