@@ -27,9 +27,34 @@ if (process.env.NODE_ENV === "production" && JWT_SECRET.length < 32) {
   throw new Error("JWT_SECRET must be at least 32 characters in production.");
 }
 
+// Vercel sits behind a proxy; trust it so rate limiting sees real client IPs.
+if (process.env.VERCEL) app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json({ limit: "20kb" }));
 app.use(passport.initialize());
+
+// Connect (and seed) once per process. On Vercel each serverless instance
+// reuses this promise across requests instead of reconnecting every time.
+let databaseReady;
+const connectDatabase = () => {
+  databaseReady ||= mongoose
+    .connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
+    .then(() => seedDatabase())
+    .catch((error) => {
+      databaseReady = undefined;
+      throw error;
+    });
+  return databaseReady;
+};
+app.use(async (_req, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
+    res.status(503).json({ message: "The database is unavailable right now. Please try again shortly." });
+  }
+});
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const SMTP_CONFIGURED = Boolean(
@@ -999,12 +1024,18 @@ app.use((error, _req, res, _next) => {
 });
 
 mongoose.set("strictQuery", true);
-mongoose.connect(MONGODB_URI)
-  .then(async () => {
-    await seedDatabase();
-    app.listen(PORT, () => console.log(`ShopEase server running at http://localhost:${PORT}`));
-  })
-  .catch((error) => {
-    console.error("MongoDB connection failed:", error.message);
-    process.exit(1);
-  });
+
+// Locally, run a normal long-lived server. On Vercel, the exported app is
+// wrapped as a serverless function by api/index.js instead.
+if (!process.env.VERCEL) {
+  connectDatabase()
+    .then(() => {
+      app.listen(PORT, () => console.log(`ShopEase server running at http://localhost:${PORT}`));
+    })
+    .catch((error) => {
+      console.error("MongoDB connection failed:", error.message);
+      process.exit(1);
+    });
+}
+
+export default app;
