@@ -1,27 +1,32 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, NavLink } from 'react-router-dom'
 import {
   Alert,
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
+  FormControlLabel,
   InputAdornment,
   TextField,
   Typography,
 } from "@mui/material";
-import { NavLink } from "react-router-dom";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "../context/AuthContext";
+import { resendVerification } from "../services/api";
 
 function Login() {
   const { signIn, isAuthenticated, isAdmin, error, loading } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [verificationPath, setVerificationPath] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/products";
@@ -40,9 +45,22 @@ function Login() {
     }
     setFormError("");
     try {
-      await signIn({ identifier, password });
+      await signIn({ identifier, password, rememberMe });
     } catch {
       // Error is handled by auth context
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setFormError("");
+    setVerificationMessage("");
+    setVerificationPath("");
+    try {
+      const result = await resendVerification(identifier.trim());
+      setVerificationMessage(result.message);
+      setVerificationPath(result.developmentVerificationPath || "");
+    } catch (requestError) {
+      setFormError(requestError.message);
     }
   };
 
@@ -113,7 +131,7 @@ function Login() {
           <TextField
             label="Username or email"
             value={identifier}
-            onChange={(event) => setIdentifier(event.target.value)}
+            onChange={(event) => setIdentifier(event.target.value.slice(0, 254))}
             fullWidth
             autoFocus
           />
@@ -121,7 +139,7 @@ function Login() {
             label="Password"
             type={showPassword ? "text" : "password"}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => setPassword(event.target.value.slice(0, 128))}
             fullWidth
             slotProps={{
               input: {
@@ -158,8 +176,41 @@ function Login() {
             }}
           />
 
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 1,
+              mt: -1,
+            }}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  size="small"
+                />
+              }
+              label={<Typography variant="body2">Remember me</Typography>}
+            />
+            <Button component={NavLink} to="/forgot-password" size="small">
+              Forgot password?
+            </Button>
+          </Box>
+
           {(formError || error) && (
             <Alert severity="error">{formError || error}</Alert>
+          )}
+          {verificationMessage && (
+            <Alert severity="info">{verificationMessage}</Alert>
+          )}
+          {verificationPath && (
+            <Button component={NavLink} to={verificationPath} variant="outlined">
+              Verify email (local development)
+            </Button>
           )}
 
           <Button
@@ -173,6 +224,17 @@ function Login() {
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </Box>
+
+        {identifier.includes("@") && (
+          <Button
+            onClick={handleResendVerification}
+            size="small"
+            fullWidth
+            sx={{ mt: 1.5 }}
+          >
+            Resend verification email
+          </Button>
+        )}
 
         <Divider sx={{ my: 3 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={500}>

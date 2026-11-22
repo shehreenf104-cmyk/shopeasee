@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from "./AuthContext";
+import { recordCartItem } from "../services/api";
 
 const CartContext = createContext(null);
 
@@ -77,6 +78,20 @@ export function CartProvider({ children }) {
           ];
 
       localStorage.setItem("shopEaseAddedProducts", JSON.stringify(updatedLog));
+
+      recordCartItem({
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        category: product.category,
+        price: product.price,
+        image: product.image,
+        quantity: 1,
+        addedBy: currentUserName,
+        customerEmail: user?.email || "",
+        customerPhone: currentUserPhone,
+      }).catch(() => undefined);
+
       return nextCart;
     });
   };

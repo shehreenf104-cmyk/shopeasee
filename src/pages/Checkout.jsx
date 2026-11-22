@@ -15,6 +15,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { createOrder } from "../services/api";
 
 function Checkout() {
   const { cart, subtotal, clearCart } = useCart();
@@ -47,12 +48,32 @@ function Checkout() {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const phone = form.phone.trim();
     if (!form.name || !form.email || !phone || !form.address) {
       return;
+    }
+
+    try {
+      await createOrder({
+        customerName: form.name,
+        customerEmail: form.email,
+        customerPhone: phone,
+        customerAddress: form.address,
+        items: cart.map((item) => ({
+          id: item.id,
+          title: item.title,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+        })),
+        total: subtotal,
+        addedBy: user?.displayName || form.name,
+      });
+    } catch (error) {
+      console.error("Order could not be saved:", error.message);
     }
 
     const existingEntries = JSON.parse(

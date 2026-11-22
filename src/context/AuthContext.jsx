@@ -1,239 +1,173 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { loginUser, signupUser } from '../services/api'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { loginUser, logoutUser, signupUser } from "../services/api";
 
-const AuthContext = createContext(null)
-const ACCOUNTS_KEY = 'shopEaseAccounts'
-const ADMIN_CREDENTIALS = {
-  email: "admin@shopease.com",
-  password: "admin123",
-  username: "admin",
-  name: { firstname: "Admin", lastname: "User" },
+const AuthContext = createContext(null);
+const AUTH_KEY = "shopEaseAuth";
+
+const decodeTokenPayload = (token) => {
+  const encoded = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, "=")));
 };
 
-const getLocalAccounts = () => {
+const isExpired = (token) => {
   try {
-    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? "{}");
+    const payload = decodeTokenPayload(token);
+    return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now();
   } catch {
-    localStorage.removeItem(ACCOUNTS_KEY);
-    return {};
+    return true;
   }
 };
 
-const saveLocalAccounts = (accounts) => {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-};
-
-const createLocalAccount = (account) => {
-  const accounts = getLocalAccounts();
-  if (accounts[account.username]) {
-    throw new Error("Username already exists locally.");
+const readStoredAuth = () => {
+  localStorage.removeItem("shopEaseAccounts");
+  for (const storage of [localStorage, sessionStorage]) {
+    try {
+      const stored = JSON.parse(storage.getItem(AUTH_KEY) ?? "null");
+      if (stored?.token && stored?.user && !isExpired(stored.token)) {
+        return stored;
+      }
+      if (stored) storage.removeItem(AUTH_KEY);
+    } catch {
+      storage.removeItem(AUTH_KEY);
+    }
   }
-  accounts[account.username] = account;
-  saveLocalAccounts(accounts);
+  return { token: null, user: null };
 };
 
 const getUserDisplayName = (userData) => {
   const firstName =
-    userData?.name?.firstname ??
-    userData?.name?.first ??
-    userData?.firstName ??
-    "";
+    userData?.name?.firstname ?? userData?.name?.first ?? "";
   const lastName =
-    userData?.name?.lastname ??
-    userData?.name?.last ??
-    userData?.lastName ??
-    "";
-  const concatenated = [firstName, lastName].filter(Boolean).join(" ");
-
-  if (concatenated) {
-    return concatenated;
-  }
-
-  return userData?.username ?? userData?.email?.split("@")[0] ?? "guest";
-};
-
-const findLocalAccount = (identifier, password) => {
-  const accounts = getLocalAccounts();
-  const byUsername = accounts[identifier];
-  if (byUsername && byUsername.password === password) {
-    return byUsername;
-  }
-
-  const byEmail = Object.values(accounts).find(
-    (account) => account.email === identifier && account.password === password,
-  );
-  return byEmail || null;
+    userData?.name?.lastname ?? userData?.name?.last ?? "";
+  const name = [firstName, lastName].filter(Boolean).join(" ");
+  return name || userData?.username || userData?.email?.split("@")[0] || "guest";
 };
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+  const [auth, setAuth] = useState(readStoredAuth);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("shopEaseAuth") ?? "null");
-      if (stored?.token) {
-        setToken(stored.token);
-        setUser(stored.user);
-      }
-    } catch {
-      localStorage.removeItem("shopEaseAuth");
-    }
+  const persistAuth = useCallback((authData, rememberMe = false) => {
+    localStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(AUTH_KEY);
+    (rememberMe ? localStorage : sessionStorage).setItem(
+      AUTH_KEY,
+      JSON.stringify(authData),
+    );
+    setAuth(authData);
   }, []);
 
-  const persistAuth = (authData) => {
-    setToken(authData.token);
-    setUser(authData.user);
-    localStorage.setItem("shopEaseAuth", JSON.stringify(authData));
-  };
-
-  const authenticate = async ({ identifier, password }) => {
-    const normalizedIdentifier = String(identifier || "")
-      .trim()
-      .toLowerCase();
-    const normalizedPassword = String(password || "");
-
-    if (
-      normalizedIdentifier === ADMIN_CREDENTIALS.email.toLowerCase() &&
-      normalizedPassword === ADMIN_CREDENTIALS.password
-    ) {
-      return {
-        token: `admin-${Date.now()}`,
-        user: {
-          username: ADMIN_CREDENTIALS.username,
-          email: ADMIN_CREDENTIALS.email,
-          name: ADMIN_CREDENTIALS.name,
-          displayName: getUserDisplayName({
-            username: ADMIN_CREDENTIALS.username,
-            email: ADMIN_CREDENTIALS.email,
-            name: ADMIN_CREDENTIALS.name,
-          }),
-          role: "admin",
-        },
-      };
+  const signOut = useCallback((revoke = true) => {
+    const token = auth.token;
+    localStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(AUTH_KEY);
+    setAuth({ token: null, user: null });
+    if (revoke && token) {
+      logoutUser(token).catch((requestError) => {
+        console.error("Server sign-out could not be completed:", requestError.message);
+      });
     }
+  }, [auth.token]);
 
-    const localAccount = findLocalAccount(identifier, password);
-    if (localAccount) {
-      return {
-        token: `local-${localAccount.username}-${Date.now()}`,
-        user: {
-          username: localAccount.username,
-          email: localAccount.email,
-          name: localAccount.name,
-          phone: localAccount.phone || "N/A",
-          displayName: getUserDisplayName(localAccount),
-          role: "user",
-        },
-      };
-    }
-
-    if (identifier.includes("@")) {
-      throw new Error("Login failed. No local account found for that email.");
-    }
-
+  useEffect(() => {
+    if (!auth.token) return undefined;
     try {
-      const response = await loginUser({ username: identifier, password });
-      const displayName = getUserDisplayName({ username: identifier });
-      return {
-        token: response.token,
-        user: { username: identifier, displayName, role: "user" },
-      };
+      const payload = decodeTokenPayload(auth.token);
+      const remaining = payload.exp * 1000 - Date.now();
+      if (remaining <= 0) {
+        const timeout = window.setTimeout(() => signOut(false), 0);
+        return () => window.clearTimeout(timeout);
+      }
+      const timeout = window.setTimeout(() => signOut(false), remaining);
+      return () => window.clearTimeout(timeout);
     } catch {
-      throw new Error("Login failed. Please check your username and password.");
+      const timeout = window.setTimeout(() => signOut(false), 0);
+      return () => window.clearTimeout(timeout);
     }
-  };
+  }, [auth.token, signOut]);
 
-  const signIn = async ({ identifier, password }) => {
+  const signIn = useCallback(async ({ identifier, password, rememberMe }) => {
     setLoading(true);
     setError("");
-
     try {
-      const authData = await authenticate({ identifier, password });
-      persistAuth(authData);
+      const response = await loginUser({
+        username: identifier,
+        password,
+        rememberMe,
+      });
+      const authData = {
+        token: response.token,
+        user: {
+          ...response.user,
+          displayName: getUserDisplayName(response.user),
+        },
+      };
+      persistAuth(authData, rememberMe);
       return authData;
     } catch (err) {
-      setError(err.message ?? "Login failed.");
+      setError(err.message || "Unable to sign in right now.");
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [persistAuth]);
 
-  const register = async ({ username, password, email, name, phone }) => {
+  const register = useCallback(async (userData) => {
     setLoading(true);
     setError("");
-
     try {
-      const safePhone = phone?.trim() || "000-000-0000";
-
-      await signupUser({
-        email,
-        username,
-        password,
-        name,
-        address: {
-          city: "Unknown",
-          street: "Unknown",
-          number: 0,
-          zipcode: "00000",
-          geolocation: { lat: "0", long: "0" },
-        },
-        phone: safePhone,
-      }).catch(() => null);
-
-      createLocalAccount({ username, password, email, name, phone: safePhone });
-
-      const authData = {
-        token: `local-${username}-${Date.now()}`,
-        user: {
-          username,
-          email,
-          name,
-          phone: safePhone,
-          displayName: getUserDisplayName({ username, email, name }),
-        },
-      };
-      persistAuth(authData);
-      return authData;
+      return await signupUser(userData);
     } catch (err) {
       setError(err.message || "Unable to create account.");
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const signOut = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem("shopEaseAuth");
-  };
+  const completeOAuth = useCallback((response) => {
+    const authData = {
+      token: response.token,
+      user: {
+        ...response.user,
+        displayName: getUserDisplayName(response.user),
+      },
+    };
+    persistAuth(authData);
+    return authData;
+  }, [persistAuth]);
 
   const value = useMemo(
     () => ({
-      token,
-      user,
+      token: auth.token,
+      user: auth.user,
       loading,
       error,
-      isAuthenticated: Boolean(token),
-      isAdmin: user?.role === "admin",
+      isAuthenticated: Boolean(auth.token),
+      isAdmin: auth.user?.role === "admin",
       signIn,
       signOut,
       register,
+      completeOAuth,
     }),
-    [token, user, loading, error],
+    [auth, loading, error, signIn, signOut, register, completeOAuth],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider')
+    throw new Error("useAuth must be used inside AuthProvider");
   }
-  return context
+  return context;
 }

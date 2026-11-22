@@ -27,11 +27,18 @@ const authNavItems = [
   { label: 'Home', to: '/' },
   { label: 'Products', to: '/products' },
   { label: 'Checkout', to: '/checkout' },
-]
+  { label: 'Help', to: '/help' },
+];
 
-const adminNavItems = [{ label: "Admin", to: "/admin" }];
+const adminNavItems = [
+  { label: "Admin", to: "/admin" },
+  { label: "Help", to: "/help" },
+];
 
-const publicNavItems = [{ label: "Home", to: "/" }];
+const publicNavItems = [
+  { label: "Home", to: "/" },
+  { label: "Help", to: "/help" },
+];
 
 function TopBar() {
   const { itemCount, toggleCart } = useCart();

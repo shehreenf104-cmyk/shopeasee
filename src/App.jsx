@@ -13,10 +13,17 @@ import Checkout from "./pages/Checkout";
 import Users from "./pages/Users";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import OAuthCallback from "./pages/OAuthCallback";
 import Admin from "./pages/Admin";
+import AdminLogin from "./pages/AdminLogin";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import TopBar from "./components/TopBar";
 import CartDrawer from "./components/CartDrawer";
+import ChatbotWidget from "./components/ChatbotWidget";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -266,11 +273,17 @@ function App() {
             >
               <TopBar />
               <CartDrawer />
+              <ChatbotWidget />
               <Box component="main" sx={{ flexGrow: 1 }}>
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/help" element={<Help />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/oauth/callback" element={<OAuthCallback />} />
                   <Route
                     path="/products"
                     element={
@@ -290,7 +303,7 @@ function App() {
                   <Route
                     path="/users"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute requireAdmin>
                         <Users />
                       </ProtectedRoute>
                     }
@@ -303,6 +316,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route path="/admin/login" element={<AdminLogin />} />
                   <Route
                     path="/admin"
                     element={

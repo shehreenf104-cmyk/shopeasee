@@ -3,6 +3,7 @@ import {
   Alert,
   Avatar,
   Box,
+  Button,
   Card,
   CardContent,
   CircularProgress,
@@ -16,7 +17,8 @@ import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import BusinessIcon from "@mui/icons-material/Business";
-import { fetchUsers } from "../services/api";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { deleteUser, fetchUsers } from "../services/api";
 
 const avatarGradients = [
   "linear-gradient(135deg, #2563EB, #1D4ED8)",
@@ -74,6 +76,16 @@ function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const handleDeleteUser = async (user) => {
+    if (!window.confirm(`Delete ${user.username}? This cannot be undone.`)) return;
+    try {
+      await deleteUser(user.id);
+      setUsers((current) => current.filter((entry) => entry.id !== user.id));
+    } catch (err) {
+      setError(err.message || "Unable to delete user.");
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -231,9 +243,19 @@ function Users() {
                         />
                         <InfoRow
                           icon={<BusinessIcon sx={{ fontSize: 15 }} />}
-                          text={user.company.name}
+                          text={user.lastLogin ? `Last login: ${new Date(user.lastLogin).toLocaleString()}` : "No login recorded"}
                         />
                       </Stack>
+                      <Button
+                        fullWidth
+                        color="error"
+                        variant="outlined"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDeleteUser(user)}
+                        sx={{ mt: 2.5, textTransform: "none", fontWeight: 700 }}
+                      >
+                        Delete user
+                      </Button>
                     </CardContent>
                   </Card>
                 </Grid>

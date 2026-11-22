@@ -22,6 +22,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import ShieldIcon from "@mui/icons-material/Shield";
 import { useAuth } from "../context/AuthContext";
+import { clearOrders, fetchOrders, fetchCartItems, deleteCartItem } from "../services/api";
 
 function Admin() {
   const { user, isAdmin, signOut } = useAuth();
@@ -29,14 +30,11 @@ function Admin() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(
-        localStorage.getItem("shopEaseAddedProducts") ?? "[]",
-      );
-      setItems(stored);
-    } catch {
-      setItems([]);
-    }
+    const controller = new AbortController();
+    fetchCartItems(controller.signal)
+      .then(setItems)
+      .catch(() => setItems([]));
+    return () => controller.abort();
   }, []);
 
   const saveItems = (nextItems) => {
@@ -44,15 +42,29 @@ function Admin() {
     localStorage.setItem("shopEaseAddedProducts", JSON.stringify(nextItems));
   };
 
-  const handleRemoveItem = (recordKey) => {
+  const handleRemoveItem = async (recordKey) => {
+    const item = items.find(
+      (entry) => `${entry.recordId ?? entry.id}-${entry.addedAt ?? entry.title}` === recordKey,
+    );
+    if (item?.recordId) {
+      try {
+        await deleteCartItem(item.recordId);
+      } catch {
+        return;
+      }
+    }
     const nextItems = items.filter(
-      (item) => `${item.id}-${item.addedAt ?? item.title}` !== recordKey,
+      (entry) => `${entry.recordId ?? entry.id}-${entry.addedAt ?? entry.title}` !== recordKey,
     );
     saveItems(nextItems);
   };
 
-  const handleClearAll = () => {
-    saveItems([]);
+  const handleClearAll = async () => {
+    try {
+      await clearOrders();
+    } finally {
+      saveItems([]);
+    }
   };
 
   const totalItems = useMemo(
@@ -210,7 +222,7 @@ function Admin() {
               </TableHead>
               <TableBody>
                 {items.map((item) => {
-                  const recordKey = `${item.id}-${item.addedAt ?? item.title}`;
+                  const recordKey = `${item.recordId ?? item.id}-${item.addedAt ?? item.title}`;
 
                   return (
                     <TableRow key={recordKey}>

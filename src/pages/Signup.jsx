@@ -24,30 +24,41 @@ function Signup() {
     phone: "",
     firstname: "",
     lastname: "",
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [verificationPath, setVerificationPath] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
 
   const isPasswordValid =
-    form.password.length >= 8 &&
-    /^[A-Z]/.test(form.password) &&
-    /[!@#$%^&*(),.?":{}|<>]/.test(form.password);
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&]).{8,}$/.test(form.password);
+  const passwordChecks = [
+    /[A-Z]/.test(form.password),
+    /[a-z]/.test(form.password),
+    /[0-9]/.test(form.password),
+    /[!@#$%^&]/.test(form.password),
+    form.password.length >= 8,
+  ];
+  const passwordStrength = passwordChecks.filter(Boolean).length;
 
   const isSignupFormValid =
-    form.username.trim() !== "" &&
-    form.email.trim() !== "" &&
+    /^[A-Za-z]{4,22}$/.test(form.username) &&
+    /^[A-Za-z0-9._%+-]+@gmail\.com$/i.test(form.email) &&
     form.phone.trim() !== "" &&
-    isPasswordValid;
+    form.firstname.trim() !== "" &&
+    form.lastname.trim() !== "" &&
+    isPasswordValid &&
+    form.password === form.confirmPassword;
 
   const handleChange = (key) => (event) => {
     const value = event.target.value;
 
     if (key === "firstname" || key === "lastname") {
-      const cleaned = value.replace(/[^a-zA-Z\s'-]/g, "");
+      const cleaned = value.replace(/[^a-zA-Z\s'-]/g, "").slice(0, 50);
       setForm((current) => ({ ...current, [key]: cleaned }));
       return;
     }
@@ -58,20 +69,32 @@ function Signup() {
       return;
     }
 
-    setForm((current) => ({ ...current, [key]: value }));
+    const maxLength = key === "username" ? 22 : key === "email" ? 254 : 128;
+    setForm((current) => ({ ...current, [key]: value.slice(0, maxLength) }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setVerificationPath("");
 
     const firstName = form.firstname.trim();
     const lastName = form.lastname.trim();
     const password = form.password;
 
-    if (!form.username || !password || !form.email || !form.phone) {
-      setError("Username, email, phone number, and password are required.");
+    if (!firstName || !lastName || !form.username || !password || !form.email || !form.phone) {
+      setError("Full name, username, email, phone number, and password are required.");
+      return;
+    }
+
+    if (!/^[A-Za-z]{4,22}$/.test(form.username)) {
+      setError("Username must contain only letters and be 4 to 22 characters.");
+      return;
+    }
+
+    if (!form.email.includes("@") || !/^[A-Za-z0-9._%+-]+@gmail\.com$/i.test(form.email)) {
+      setError("Please enter valid Gmail with @");
       return;
     }
 
@@ -89,18 +112,13 @@ function Signup() {
       return;
     }
 
-    if (!/^[A-Z]/.test(password)) {
-      setError("Password must start with an uppercase letter.");
+    if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&]).{8,}$/.test(password)) {
+      setError("Password must be 8+ characters with uppercase, lowercase, number, and special sign.");
       return;
     }
 
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      setError("Password must include at least one special character.");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+    if (password !== form.confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -111,7 +129,7 @@ function Signup() {
 
     setLoading(true);
     try {
-      await register({
+      const result = await register({
         username: form.username,
         password,
         email: form.email,
@@ -121,8 +139,12 @@ function Signup() {
           lastname: lastName,
         },
       });
-      setSuccess("Account created and signed in successfully.");
-      setTimeout(() => navigate("/products"), 1200);
+      setSuccess(result.message || "Account created. Check your email to verify it before signing in.");
+      if (result.developmentVerificationPath) {
+        setVerificationPath(result.developmentVerificationPath);
+      } else {
+        setTimeout(() => navigate("/login"), 1800);
+      }
     } catch (err) {
       setError(err.message || "Unable to create account.");
     } finally {
@@ -201,6 +223,7 @@ function Signup() {
                 label="First name"
                 value={form.firstname}
                 onChange={handleChange("firstname")}
+                required
                 fullWidth
               />
             </Grid>
@@ -209,6 +232,7 @@ function Signup() {
                 label="Last name"
                 value={form.lastname}
                 onChange={handleChange("lastname")}
+                required
                 fullWidth
               />
             </Grid>
@@ -219,6 +243,7 @@ function Signup() {
             type="email"
             value={form.email}
             onChange={handleChange("email")}
+            slotProps={{ htmlInput: { maxLength: 254 } }}
             fullWidth
             required
           />
@@ -230,11 +255,13 @@ function Signup() {
             fullWidth
             required
             placeholder="+1 234 567 8900"
+            slotProps={{ htmlInput: { maxLength: 20 } }}
           />
           <TextField
             label="Username"
             value={form.username}
             onChange={handleChange("username")}
+            slotProps={{ htmlInput: { maxLength: 22, autoComplete: "username" } }}
             fullWidth
             required
           />
@@ -246,6 +273,7 @@ function Signup() {
             fullWidth
             required
             slotProps={{
+              htmlInput: { maxLength: 128, autoComplete: "new-password" },
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
@@ -280,10 +308,57 @@ function Signup() {
             }}
           />
 
+          <Box sx={{ mt: -1.5 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(5, 1fr)",
+                gap: 0.5,
+                mb: 0.75,
+              }}
+              aria-label={`Password strength ${passwordStrength} of 5`}
+            >
+              {passwordChecks.map((passed, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    height: 4,
+                    borderRadius: 2,
+                    bgcolor: passed ? "success.main" : "grey.300",
+                  }}
+                />
+              ))}
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Password strength: {passwordStrength === 5 ? "Strong" : passwordStrength >= 3 ? "Fair" : "Weak"}. Include uppercase, lowercase, number, special sign, and at least 8 characters.
+            </Typography>
+          </Box>
+
+          <TextField
+            label="Confirm password"
+            type={showPassword ? "text" : "password"}
+            value={form.confirmPassword}
+            onChange={handleChange("confirmPassword")}
+            slotProps={{ htmlInput: { maxLength: 128, autoComplete: "new-password" } }}
+            fullWidth
+            required
+            error={Boolean(form.confirmPassword) && form.confirmPassword !== form.password}
+            helperText={
+              form.confirmPassword && form.confirmPassword !== form.password
+                ? "Passwords do not match."
+                : ""
+            }
+          />
+
           {(error || success) && (
             <Alert severity={error ? "error" : "success"}>
               {error || success}
             </Alert>
+          )}
+          {verificationPath && (
+            <Button component={NavLink} to={verificationPath} variant="outlined">
+              Verify email (local development)
+            </Button>
           )}
 
           <Button
