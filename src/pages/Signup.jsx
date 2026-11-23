@@ -45,7 +45,7 @@ function Signup() {
   const passwordStrength = passwordChecks.filter(Boolean).length;
 
   const isSignupFormValid =
-    /^[A-Za-z]{4,22}$/.test(form.username) &&
+    /^[A-Za-z0-9]{4,22}$/.test(form.username) &&
     /^[A-Za-z0-9._%+-]+@gmail\.com$/i.test(form.email) &&
     form.phone.trim() !== "" &&
     form.firstname.trim() !== "" &&
@@ -68,6 +68,12 @@ function Signup() {
       return;
     }
 
+    if (key === "username") {
+      const cleaned = value.replace(/[^A-Za-z0-9]/g, "").slice(0, 22);
+      setForm((current) => ({ ...current, [key]: cleaned }));
+      return;
+    }
+
     const maxLength = key === "username" ? 22 : key === "email" ? 254 : 128;
     setForm((current) => ({ ...current, [key]: value.slice(0, maxLength) }));
   };
@@ -86,8 +92,8 @@ function Signup() {
       return;
     }
 
-    if (!/^[A-Za-z]{4,22}$/.test(form.username)) {
-      setError("Username must contain only letters and be 4 to 22 characters.");
+    if (!/^[A-Za-z0-9]{4,22}$/.test(form.username)) {
+      setError("Username must contain only letters and numbers and be 4 to 22 characters.");
       return;
     }
 
@@ -256,6 +262,8 @@ function Signup() {
             value={form.username}
             onChange={handleChange("username")}
             slotProps={{ htmlInput: { maxLength: 22, autoComplete: "username" } }}
+            placeholder="e.g. thichtamoor123"
+            helperText="4-22 characters: letters and numbers only"
             fullWidth
             required
           />

@@ -4,6 +4,8 @@ import StorefrontIcon from '@mui/icons-material/Storefront'
 import CloseIcon from '@mui/icons-material/Close'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
 import {
   AppBar,
   Badge,
@@ -22,8 +24,8 @@ import {
   useColorScheme,
   useScrollTrigger,
 } from '@mui/material'
-import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 
@@ -47,7 +49,13 @@ const publicNavItems = [
 function TopBar() {
   const { itemCount, toggleCart } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [fontScale, setFontScale] = useState(100);
   const { isAuthenticated, isAdmin, signOut } = useAuth();
+  const { pathname } = useLocation();
+  const supportsFontZoom =
+    pathname === "/" ||
+    pathname === "/products" ||
+    pathname.startsWith("/products/");
   const navItems = isAuthenticated
     ? isAdmin
       ? adminNavItems
@@ -56,6 +64,15 @@ function TopBar() {
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 10 });
   const { mode, systemMode, setMode } = useColorScheme();
   const isDark = (mode === "system" ? systemMode : mode) === "dark";
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.fontSize = supportsFontZoom ? `${fontScale}%` : "";
+
+    return () => {
+      root.style.fontSize = "";
+    };
+  }, [fontScale, supportsFontZoom]);
 
   return (
     <AppBar
@@ -227,6 +244,58 @@ function TopBar() {
             >
               Sign up
             </Button>
+          </Box>
+        )}
+
+        {supportsFontZoom && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              ml: 0.5,
+              borderRadius: 2.5,
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
+          >
+            <Tooltip title="Decrease font size">
+              <span>
+                <IconButton
+                  onClick={() => setFontScale((scale) => Math.max(80, scale - 10))}
+                  disabled={fontScale <= 80}
+                  aria-label={`Decrease font size, current size ${fontScale}%`}
+                  sx={{
+                    color: "rgba(255,255,255,0.85)",
+                    width: 36,
+                    height: 38,
+                    borderRadius: 2,
+                    "&:hover": { background: "rgba(255,255,255,0.14)", color: "white" },
+                    "&.Mui-disabled": { color: "rgba(255,255,255,0.35)" },
+                  }}
+                >
+                  <RemoveIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Increase font size">
+              <span>
+                <IconButton
+                  onClick={() => setFontScale((scale) => Math.min(150, scale + 10))}
+                  disabled={fontScale >= 150}
+                  aria-label={`Increase font size, current size ${fontScale}%`}
+                  sx={{
+                    color: "rgba(255,255,255,0.85)",
+                    width: 36,
+                    height: 38,
+                    borderRadius: 2,
+                    "&:hover": { background: "rgba(255,255,255,0.14)", color: "white" },
+                    "&.Mui-disabled": { color: "rgba(255,255,255,0.35)" },
+                  }}
+                >
+                  <AddIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Box>
         )}
 

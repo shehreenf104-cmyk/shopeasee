@@ -423,7 +423,13 @@ async function seedDatabase() {
   const adminEmail = process.env.ADMIN_EMAIL || "admin@shopease.com";
   const adminPassword = process.env.ADMIN_PASSWORD;
   const existingAdmin = await User.findOne({ email: adminEmail });
-  if (!existingAdmin && adminPassword) {
+  if (existingAdmin && adminPassword) {
+    existingAdmin.password = await bcrypt.hash(adminPassword, 12);
+    existingAdmin.role = "admin";
+    existingAdmin.disabled = false;
+    existingAdmin.emailVerified = true;
+    await existingAdmin.save();
+  } else if (!existingAdmin && adminPassword) {
     await User.create({
       username: "admin",
       email: adminEmail,
@@ -599,7 +605,7 @@ app.post("/api/auth/signup", signupRateLimit, async (req, res) => {
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const normalizedUsername = String(username || "").trim();
     if (
-      !/^[A-Za-z]{4,22}$/.test(normalizedUsername) ||
+      !/^[A-Za-z0-9]{4,22}$/.test(normalizedUsername) ||
       !/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(normalizedEmail) ||
       typeof password !== "string" ||
       !/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&]).{8,128}$/.test(String(password || "")) ||
