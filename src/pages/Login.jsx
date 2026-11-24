@@ -15,7 +15,9 @@ import {
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import GoogleIcon from "@mui/icons-material/Google";
 import { useAuth } from "../context/AuthContext";
+import { getOAuthUrl } from "../services/api";
 
 function Login() {
   const { signIn, isAuthenticated, isAdmin, error, loading } = useAuth();
@@ -27,6 +29,7 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/products";
+  const oauthError = new URLSearchParams(location.search).get("oauthError");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -200,6 +203,33 @@ function Login() {
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </Box>
+
+        <Divider sx={{ my: 3 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={500}>
+            Or continue with
+          </Typography>
+        </Divider>
+
+        <Box sx={{ display: "grid", gap: 1.25 }}>
+          <Button
+            variant="outlined"
+            size="large"
+            fullWidth
+            startIcon={<GoogleIcon />}
+            onClick={() => window.location.assign(getOAuthUrl("google"))}
+            sx={{ py: 1.25, borderRadius: 3, textTransform: "none" }}
+          >
+            Continue with Google
+          </Button>
+        </Box>
+
+        {oauthError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {oauthError === "state"
+              ? "The sign-in request could not be verified. Please try again."
+              : `Unable to sign in with ${oauthError === "facebook" ? "Facebook" : "Google"}.`}
+          </Alert>
+        )}
 
         <Divider sx={{ my: 3 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={500}>
